@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rental_management_system_flutter/widgets/custom_app_bar.dart';
 import 'rooms_page.dart';
 import 'tenants_page.dart';
 import 'readings_page.dart';
@@ -7,30 +8,23 @@ import 'billings_page.dart';
 class HomePage extends StatefulWidget {
   final String inputText;
 
-  HomePage({required this.inputText});
+  const HomePage({required this.inputText, super.key});
 
   @override
-  HomePageState createState() => HomePageState();
+  State<HomePage> createState() => HomePageState();
 }
 
 class HomePageState extends State<HomePage> {
   void _navigateToPage(Widget page) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => page),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
   @override
   Widget build(BuildContext context) {
+    final Color blue = Colors.blue.shade800;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Welcome Admin!',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.blue.shade800,
-      ),
+      appBar: CustomAppBar(title: 'Welcome Admin!', backgroundColor: blue),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -41,18 +35,25 @@ class HomePageState extends State<HomePage> {
         ),
         child: Center(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildSquareButton("Rooms", Icons.receipt, RoomsPage()),
-                SizedBox(height: 20),
-                _buildSquareButton("Tenants", Icons.history, TenantsPage()),
-                SizedBox(height: 20),
-                _buildSquareButton("Electric Readings", Icons.receipt, ReadingsPage()),
-                SizedBox(height: 20),
-                _buildSquareButton("Billing", Icons.receipt, BillingsPage()),
-                SizedBox(height: 20),
+                _buildSquareButton("Rooms", Icons.meeting_room, RoomsPage()),
+                const SizedBox(height: 20),
+                _buildSquareButton("Tenants", Icons.people, TenantsPage()),
+                const SizedBox(height: 20),
+                _buildSquareButton(
+                  "Electric Readings",
+                  Icons.flash_on,
+                  ReadingsPage(),
+                ),
+                const SizedBox(height: 20),
+                _buildSquareButton(
+                  "Billing",
+                  Icons.receipt_long,
+                  BillingsPage(),
+                ),
               ],
             ),
           ),
@@ -66,11 +67,11 @@ class HomePageState extends State<HomePage> {
       onTap: () => _navigateToPage(page),
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.black26,
               blurRadius: 8,
@@ -82,11 +83,11 @@ class HomePageState extends State<HomePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 50, color: Colors.blue.shade800),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
               text,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ],
         ),
