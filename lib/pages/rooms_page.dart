@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rental_management_system_flutter/widgets/custom_add_button.dart';
 import 'package:rental_management_system_flutter/widgets/custom_app_bar.dart';
+import '../services/room_service.dart';
 
 class RoomsPage extends StatefulWidget {
   @override
@@ -8,19 +9,34 @@ class RoomsPage extends StatefulWidget {
 }
 
 class _RoomsPageState extends State<RoomsPage> {
-  final List<Map<String, dynamic>> _rooms = [
-    {"id": 1, "name": "Room A", "rent": 500.00},
-    {"id": 2, "name": "Room B", "rent": 600.00},
-  ];
+  final RoomService _roomService = RoomService();
+  List<Room> _rooms = [];
 
   final _roomNameController = TextEditingController();
   final _rentController = TextEditingController();
 
-  void _showRoomDialog({Map<String, dynamic>? room}) {
+  @override
+  void initState() {
+    super.initState();
+    _loadRooms();
+  }
+
+  Future<void> _loadRooms() async {
+    try {
+      final rooms = await _roomService.fetchRooms();
+      setState(() {
+        _rooms = rooms;
+      });
+    } catch (e) {
+      _showSnackBar('Failed to load rooms');
+    }
+  }
+
+  void _showRoomDialog({Room? room}) {
     final isEditing = room != null;
 
-    _roomNameController.text = isEditing ? room['name'] : '';
-    _rentController.text = isEditing ? room['rent'].toString() : '';
+    _roomNameController.text = isEditing ? room.name : '';
+    _rentController.text = isEditing ? room.rent.toString() : '';
 
     showDialog(
       context: context,
@@ -48,26 +64,24 @@ class _RoomsPageState extends State<RoomsPage> {
               child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final name = _roomNameController.text.trim();
                 final rent = double.tryParse(_rentController.text);
 
                 if (name.isNotEmpty && rent != null) {
-                  setState(() {
+                  try {
                     if (isEditing) {
-                      room['name'] = name;
-                      room['rent'] = rent;
+                      await _roomService.updateRoom(room.id, name, rent);
                       _showSnackBar('Room updated');
                     } else {
-                      _rooms.add({
-                        'id': _rooms.length + 1,
-                        'name': name,
-                        'rent': rent,
-                      });
+                      await _roomService.createRoom(name, rent);
                       _showSnackBar('Room "$name" added');
                     }
-                  });
-                  Navigator.pop(context);
+                    await _loadRooms();
+                    Navigator.pop(context);
+                  } catch (e) {
+                    _showSnackBar('Operation failed');
+                  }
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
@@ -79,11 +93,14 @@ class _RoomsPageState extends State<RoomsPage> {
     );
   }
 
-  void _deleteRoom(int id) {
-    setState(() {
-      _rooms.removeWhere((room) => room['id'] == id);
-    });
-    _showSnackBar('Room deleted');
+  Future<void> _deleteRoom(int id) async {
+    try {
+      await _roomService.deleteRoom(id);
+      _showSnackBar('Room deleted');
+      await _loadRooms();
+    } catch (e) {
+      _showSnackBar('Failed to delete room');
+    }
   }
 
   void _showSnackBar(String message) {
@@ -92,7 +109,7 @@ class _RoomsPageState extends State<RoomsPage> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Widget _buildRoomTile(Map<String, dynamic> room) {
+  Widget _buildRoomTile(Room room) {
     return Card(
       elevation: 3,
       margin: const EdgeInsets.symmetric(vertical: 10),
@@ -100,10 +117,10 @@ class _RoomsPageState extends State<RoomsPage> {
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
         title: Text(
-          room['name'],
+          room.name,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        subtitle: Text('Rent: ₱${room['rent'].toStringAsFixed(2)}'),
+        subtitle: Text('Rent: ₱${room.rent.toStringAsFixed(2)}'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -113,7 +130,7 @@ class _RoomsPageState extends State<RoomsPage> {
             ),
             IconButton(
               icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _deleteRoom(room['id']),
+              onPressed: () => _deleteRoom(room.id),
             ),
           ],
         ),
