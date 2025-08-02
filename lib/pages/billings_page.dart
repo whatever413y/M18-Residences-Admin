@@ -294,8 +294,7 @@ class BillingsPageState extends State<BillingsPage> {
                                           value: tenant['id'],
                                           child: Text(tenant['name']),
                                         ),
-                                      )
-                                      .toList(),
+                                      ),
                                 ],
                         onChanged: (val) {
                           setStateDialog(() {

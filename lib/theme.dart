@@ -75,7 +75,7 @@ class AppTheme {
 
       dataTableTheme: DataTableThemeData(
         headingRowColor: WidgetStateProperty.all(
-          AppColors.primaryBlue.withOpacity(0.1),
+          AppColors.primaryBlue.withAlpha(26),
         ),
         headingTextStyle: TextStyle(
           color: AppColors.primaryBlue,
@@ -86,7 +86,7 @@ class AppTheme {
           Set<WidgetState> states,
         ) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.primaryBlue.withOpacity(0.2);
+            return AppColors.primaryBlue.withAlpha(51);
           }
           return null; // default
         }),
