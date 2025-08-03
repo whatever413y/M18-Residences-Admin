@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:collection/collection.dart';
+import 'package:rental_management_system_flutter/models/reading.dart';
+import 'package:rental_management_system_flutter/models/room.dart';
+import 'package:rental_management_system_flutter/models/tenant.dart';
+import 'package:rental_management_system_flutter/services/readings_service.dart';
+import 'package:rental_management_system_flutter/services/room_service.dart';
+import 'package:rental_management_system_flutter/services/tenant_service.dart';
 import 'package:rental_management_system_flutter/widgets/custom_add_button.dart';
 import 'package:rental_management_system_flutter/widgets/custom_app_bar.dart';
 
@@ -9,281 +16,102 @@ class ReadingsPage extends StatefulWidget {
 }
 
 class ReadingsPageState extends State<ReadingsPage> {
+  final TenantService _tenantService = TenantService();
+  final RoomService _roomService = RoomService();
+  final ReadingService _readingService = ReadingService();
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
 
-  // Mock rooms data: 5 rooms
-  final List<Map<String, dynamic>> rooms = [
-    {"id": 1, "name": "Room A"},
-    {"id": 2, "name": "Room B"},
-    {"id": 3, "name": "Room C"},
-    {"id": 4, "name": "Room D"},
-    {"id": 5, "name": "Room E"},
-  ];
-
-  // Mock tenants data: 5 tenants, including one tenant assigned to multiple rooms
-  final List<Map<String, dynamic>> tenants = [
-    {"id": 1, "name": "John Doe", "room_id": 1},
-    {"id": 2, "name": "Jane Smith", "room_id": 2},
-    {"id": 3, "name": "Alice Johnson", "room_id": 3},
-    {"id": 4, "name": "Bob Williams", "room_id": 4},
-    // Tenant with multiple rooms (simulate by multiple tenant-room links)
-    {"id": 5, "name": "Charlie Brown", "room_id": 5},
-    {
-      "id": 6,
-      "name": "Charlie Brown 2",
-      "room_id": 3,
-    }, // same tenant different room
-  ];
-
-  // Mock readings data: 3 readings each, sorted by latest month first (newest first)
-  // For tenant 5 with multiple rooms, 3 readings per room
-  List<Map<String, dynamic>> readings = [
-    // Tenant 1, Room 1
-    {
-      "id": 1,
-      "tenant_id": 1,
-      "room_id": 1,
-      "prev_reading": 1000,
-      "curr_reading": 1100,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 10)),
-    },
-    {
-      "id": 2,
-      "tenant_id": 1,
-      "room_id": 1,
-      "prev_reading": 900,
-      "curr_reading": 1000,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 40)),
-    },
-    {
-      "id": 3,
-      "tenant_id": 1,
-      "room_id": 1,
-      "prev_reading": 800,
-      "curr_reading": 900,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 70)),
-    },
-
-    // Tenant 2, Room 2
-    {
-      "id": 4,
-      "tenant_id": 2,
-      "room_id": 2,
-      "prev_reading": 800,
-      "curr_reading": 900,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 5)),
-    },
-    {
-      "id": 5,
-      "tenant_id": 2,
-      "room_id": 2,
-      "prev_reading": 700,
-      "curr_reading": 800,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 35)),
-    },
-    {
-      "id": 6,
-      "tenant_id": 2,
-      "room_id": 2,
-      "prev_reading": 600,
-      "curr_reading": 700,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 65)),
-    },
-
-    // Tenant 3, Room 3
-    {
-      "id": 7,
-      "tenant_id": 3,
-      "room_id": 3,
-      "prev_reading": 1200,
-      "curr_reading": 1300,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 15)),
-    },
-    {
-      "id": 8,
-      "tenant_id": 3,
-      "room_id": 3,
-      "prev_reading": 1100,
-      "curr_reading": 1200,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 45)),
-    },
-    {
-      "id": 9,
-      "tenant_id": 3,
-      "room_id": 3,
-      "prev_reading": 1000,
-      "curr_reading": 1100,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 75)),
-    },
-
-    // Tenant 4, Room 4
-    {
-      "id": 10,
-      "tenant_id": 4,
-      "room_id": 4,
-      "prev_reading": 1300,
-      "curr_reading": 1400,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 8)),
-    },
-    {
-      "id": 11,
-      "tenant_id": 4,
-      "room_id": 4,
-      "prev_reading": 1200,
-      "curr_reading": 1300,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 38)),
-    },
-    {
-      "id": 12,
-      "tenant_id": 4,
-      "room_id": 4,
-      "prev_reading": 1100,
-      "curr_reading": 1200,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 68)),
-    },
-
-    // Tenant 5, Room 5
-    {
-      "id": 13,
-      "tenant_id": 5,
-      "room_id": 5,
-      "prev_reading": 900,
-      "curr_reading": 1000,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 12)),
-    },
-    {
-      "id": 14,
-      "tenant_id": 5,
-      "room_id": 5,
-      "prev_reading": 800,
-      "curr_reading": 900,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 42)),
-    },
-    {
-      "id": 15,
-      "tenant_id": 5,
-      "room_id": 5,
-      "prev_reading": 700,
-      "curr_reading": 800,
-      "consumption": 100,
-      "created_at": DateTime.now().subtract(Duration(days: 72)),
-    },
-
-    // Tenant 5, Room 1 (multiple rooms for same tenant)
-    {
-      "id": 16,
-      "tenant_id": 6,
-      "room_id": 3,
-      "prev_reading": 1100,
-      "curr_reading": 1150,
-      "consumption": 50,
-      "created_at": DateTime.now().subtract(Duration(days: 7)),
-    },
-    {
-      "id": 17,
-      "tenant_id": 6,
-      "room_id": 3,
-      "prev_reading": 1050,
-      "curr_reading": 1100,
-      "consumption": 50,
-      "created_at": DateTime.now().subtract(Duration(days: 37)),
-    },
-    {
-      "id": 18,
-      "tenant_id": 6,
-      "room_id": 3,
-      "prev_reading": 1000,
-      "curr_reading": 1050,
-      "consumption": 50,
-      "created_at": DateTime.now().subtract(Duration(days: 67)),
-    },
-  ];
+  List<Room> rooms = [];
+  List<Tenant> tenants = [];
+  List<Reading> readings = [];
 
   int? _filterRoomId;
   int? _filterTenantId;
+  int? _selectedRoomId;
+  int? _selectedTenantId;
 
   final _prevReadingController = TextEditingController();
   final _currReadingController = TextEditingController();
 
-  int? _selectedRoomId;
-  int? _selectedTenantId;
-
-  List<Map<String, dynamic>> get _filteredTenants {
-    if (_selectedRoomId == null) return tenants;
-    return tenants.where((t) => t['room_id'] == _selectedRoomId).toList();
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
   }
 
-  List<Map<String, dynamic>> get _filteredReadings {
-    return readings.where((r) {
-      final matchesRoom =
-          _filterRoomId == null || r['room_id'] == _filterRoomId;
-      final matchesTenant =
-          _filterTenantId == null || r['tenant_id'] == _filterTenantId;
-      return matchesRoom && matchesTenant;
-    }).toList();
-  }
-
-  Map<String, dynamic>? _findById(List<Map<String, dynamic>> list, int id) {
+  Future<void> _loadData() async {
     try {
-      return list.firstWhere((item) => item['id'] == id);
-    } catch (_) {
-      return null;
+      final fetchedTenants = await _tenantService.fetchTenants();
+      final fetchedRooms = await _roomService.fetchRooms();
+      final fetchedReadings = await _readingService.fetchReadings();
+      setState(() {
+        tenants = fetchedTenants;
+        rooms = fetchedRooms;
+        readings = fetchedReadings;
+      });
+    } catch (e) {
+      debugPrint('Error loading data: $e');
+      _showSnackBar('Failed to load data');
     }
   }
 
-  String _getTenantName(int tenantId) {
-    final tenant = _findById(tenants, tenantId);
-    return tenant != null ? tenant['name'] : 'Unknown Tenant';
+  List<Tenant> get _filteredTenants =>
+      _selectedRoomId == null
+          ? tenants
+          : tenants.where((t) => t.roomId == _selectedRoomId).toList();
+
+  List<Reading> get _filteredReadings =>
+      readings.where((r) {
+        final matchRoom = _filterRoomId == null || r.roomId == _filterRoomId;
+        final matchTenant =
+            _filterTenantId == null || r.tenantId == _filterTenantId;
+        return matchRoom && matchTenant;
+      }).toList();
+
+  Room? _findRoomById(int id) => rooms.firstWhereOrNull((r) => r.id == id);
+  Tenant? _findTenantById(int id) =>
+      tenants.firstWhereOrNull((t) => t.id == id);
+
+  String _getRoomName(int id) => _findRoomById(id)?.name ?? 'Unknown Room';
+  String _getTenantName(int id) =>
+      _findTenantById(id)?.name ?? 'Unknown Tenant';
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  String _getRoomName(int roomId) {
-    final room = _findById(rooms, roomId);
-    return room != null ? room['name'] : 'Unknown Room';
+  void _deleteReading(int id) async {
+    await _readingService.deleteReading(id);
+    setState(() => readings.removeWhere((r) => r.id == id));
+    _showSnackBar('Reading deleted');
   }
 
-  /// Returns the latest reading for given tenant & room or null if none
-  Map<String, dynamic>? _getLatestReading(int roomId, int tenantId) {
+  Reading? _getLatestReading(int roomId, int tenantId) {
     final filtered =
         readings
-            .where((r) => r['room_id'] == roomId && r['tenant_id'] == tenantId)
-            .toList();
-    if (filtered.isEmpty) return null;
-    filtered.sort((a, b) => b['created_at'].compareTo(a['created_at']));
-    return filtered.first;
+            .where((r) => r.roomId == roomId && r.tenantId == tenantId)
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return filtered.isNotEmpty ? filtered.first : null;
   }
 
-  void _addOrEditReadingDialog({Map<String, dynamic>? reading}) {
+  void _addOrEditReadingDialog({Reading? reading}) {
     if (reading != null) {
-      // Edit mode
-      _selectedRoomId = reading['room_id'];
-      _selectedTenantId = reading['tenant_id'];
-      _prevReadingController.text = reading['prev_reading'].toString();
-      _currReadingController.text = reading['curr_reading'].toString();
+      _selectedRoomId = reading.roomId;
+      _selectedTenantId = reading.tenantId;
+      _prevReadingController.text = reading.prevReading.toString();
+      _currReadingController.text = reading.currReading.toString();
     } else {
-      // Add mode
       _selectedRoomId = _filterRoomId;
       _selectedTenantId = _filterTenantId;
 
       if (_selectedRoomId != null && _selectedTenantId != null) {
         final latest = _getLatestReading(_selectedRoomId!, _selectedTenantId!);
-        _prevReadingController.text =
-            latest != null ? latest['curr_reading'].toString() : '';
+        _prevReadingController.text = latest?.currReading.toString() ?? '0';
       } else {
-        _prevReadingController.clear();
+        _prevReadingController.text = '0';
       }
       _currReadingController.clear();
     }
@@ -306,8 +134,6 @@ class ReadingsPageState extends State<ReadingsPage> {
                         children: [
                           DropdownButtonFormField<int>(
                             decoration: InputDecoration(
-                              labelText: 'Select Room',
-                              hintText: 'Choose a room',
                               border: OutlineInputBorder(),
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -318,14 +144,12 @@ class ReadingsPageState extends State<ReadingsPage> {
                             items: [
                               DropdownMenuItem<int>(
                                 value: null,
-                                enabled:
-                                    false, // Disable selecting "Select Room" once a room is chosen
-                                child: Text('Select Room'),
+                                child: Text('All Rooms'),
                               ),
                               ...rooms.map(
                                 (room) => DropdownMenuItem<int>(
-                                  value: room['id'],
-                                  child: Text(room['name']),
+                                  value: room.id,
+                                  child: Text(room.name),
                                 ),
                               ),
                             ],
@@ -334,16 +158,11 @@ class ReadingsPageState extends State<ReadingsPage> {
                                 _selectedRoomId = value;
 
                                 if (_selectedTenantId != null) {
-                                  Map<String, dynamic>? tenant;
-                                  try {
-                                    tenant = tenants.firstWhere(
-                                      (t) => t['id'] == _selectedTenantId,
-                                    );
-                                  } catch (_) {
-                                    tenant = null;
-                                  }
+                                  final tenant = tenants.firstWhereOrNull(
+                                    (t) => t.id == _selectedTenantId,
+                                  );
                                   if (tenant == null ||
-                                      tenant['room_id'] != _selectedRoomId) {
+                                      tenant.roomId != _selectedRoomId) {
                                     _selectedTenantId = null;
                                   }
                                 }
@@ -356,9 +175,7 @@ class ReadingsPageState extends State<ReadingsPage> {
                                     _selectedTenantId!,
                                   );
                                   _prevReadingController.text =
-                                      latest != null
-                                          ? latest['curr_reading'].toString()
-                                          : '';
+                                      latest?.currReading.toString() ?? '0';
                                 } else if (reading == null) {
                                   _prevReadingController.clear();
                                 }
@@ -368,7 +185,6 @@ class ReadingsPageState extends State<ReadingsPage> {
                           SizedBox(height: 16),
                           DropdownButtonFormField<int>(
                             decoration: InputDecoration(
-                              labelText: 'Select Tenant',
                               hintText: 'Choose a tenant',
                               border: OutlineInputBorder(),
                               contentPadding: EdgeInsets.symmetric(
@@ -381,12 +197,12 @@ class ReadingsPageState extends State<ReadingsPage> {
                               DropdownMenuItem<int>(
                                 value: null,
                                 enabled: false,
-                                child: Text('Select Tenant'),
+                                child: Text('Choose a tenant'),
                               ),
                               ..._filteredTenants.map(
                                 (tenant) => DropdownMenuItem<int>(
-                                  value: tenant['id'],
-                                  child: Text(tenant['name']),
+                                  value: tenant.id,
+                                  child: Text(tenant.name),
                                 ),
                               ),
                             ],
@@ -396,9 +212,11 @@ class ReadingsPageState extends State<ReadingsPage> {
 
                                 if (_selectedTenantId != null) {
                                   final tenantRoomId =
-                                      tenants.firstWhere(
-                                        (t) => t['id'] == _selectedTenantId,
-                                      )['room_id'];
+                                      tenants
+                                          .firstWhere(
+                                            (t) => t.id == _selectedTenantId,
+                                          )
+                                          .roomId;
                                   if (_selectedRoomId != tenantRoomId) {
                                     _selectedRoomId = tenantRoomId;
                                   }
@@ -413,8 +231,8 @@ class ReadingsPageState extends State<ReadingsPage> {
                                   );
                                   _prevReadingController.text =
                                       latest != null
-                                          ? latest['curr_reading'].toString()
-                                          : '';
+                                          ? latest.currReading.toString()
+                                          : '0';
                                 } else if (reading == null) {
                                   _prevReadingController.clear();
                                 }
@@ -464,7 +282,7 @@ class ReadingsPageState extends State<ReadingsPage> {
                           vertical: 12,
                         ),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
                         final prevReading = int.tryParse(
                           _prevReadingController.text,
                         );
@@ -487,37 +305,41 @@ class ReadingsPageState extends State<ReadingsPage> {
                           return;
                         }
 
-                        setState(() {
+                        try {
                           if (reading == null) {
-                            readings.add({
-                              'id': readings.length + 1,
-                              'room_id': _selectedRoomId,
-                              'tenant_id': _selectedTenantId,
-                              'prev_reading': prevReading,
-                              'curr_reading': currReading,
-                              'consumption': currReading - prevReading,
-                              'created_at': DateTime.now(),
-                            });
+                            final newReading = await _readingService
+                                .createReading(
+                                  roomId: _selectedRoomId!,
+                                  tenantId: _selectedTenantId!,
+                                  prevReading: prevReading,
+                                  currReading: currReading,
+                                );
+                            setState(() => readings.add(newReading));
+                            _showSnackBar('Reading added');
                           } else {
-                            reading['room_id'] = _selectedRoomId;
-                            reading['tenant_id'] = _selectedTenantId;
-                            reading['prev_reading'] = prevReading;
-                            reading['curr_reading'] = currReading;
-                            reading['consumption'] = currReading - prevReading;
+                            final updatedReading = await _readingService
+                                .updateReading(
+                                  id: reading.id,
+                                  roomId: _selectedRoomId!,
+                                  tenantId: _selectedTenantId!,
+                                  prevReading: prevReading,
+                                  currReading: currReading,
+                                );
+                            setState(() {
+                              final index = readings.indexWhere(
+                                (r) => r.id == updatedReading.id,
+                              );
+                              if (index != -1) readings[index] = updatedReading;
+                            });
+                            _showSnackBar('Reading updated');
                           }
-                        });
 
-                        Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              reading == null
-                                  ? 'Reading added'
-                                  : 'Reading updated',
-                            ),
-                          ),
-                        );
+                          Navigator.of(context).pop();
+                        } catch (e) {
+                          _showSnackBar('Error saving reading: $e');
+                        }
                       },
+
                       child: Text(reading == null ? 'Add' : 'Save'),
                     ),
                   ],
@@ -526,25 +348,13 @@ class ReadingsPageState extends State<ReadingsPage> {
     );
   }
 
-  void _deleteReading(int id) {
-    setState(() {
-      readings.removeWhere((r) => r['id'] == id);
-    });
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Reading deleted')));
-  }
-
-  void _showReadingDetailsDialog(Map<String, dynamic> reading) {
+  void _showReadingDetailsDialog(Reading reading) {
     showDialog(
       context: context,
       builder: (context) {
         return Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth:
-                  400, // Set a max width for better centering and readability
-            ),
+            constraints: BoxConstraints(maxWidth: 400),
             child: Dialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -567,31 +377,28 @@ class ReadingsPageState extends State<ReadingsPage> {
                     SizedBox(height: 16),
                     Divider(color: Colors.grey.shade300, thickness: 1),
                     SizedBox(height: 16),
-                    _buildDetailRow(
-                      'Tenant',
-                      _getTenantName(reading['tenant_id']),
-                    ),
+                    _buildDetailRow('Tenant', _getTenantName(reading.tenantId)),
                     SizedBox(height: 12),
-                    _buildDetailRow('Room', _getRoomName(reading['room_id'])),
+                    _buildDetailRow('Room', _getRoomName(reading.roomId)),
                     SizedBox(height: 12),
                     _buildDetailRow(
                       'Previous Reading',
-                      reading['prev_reading'].toString(),
+                      reading.prevReading.toString(),
                     ),
                     SizedBox(height: 12),
                     _buildDetailRow(
                       'Current Reading',
-                      reading['curr_reading'].toString(),
+                      reading.currReading.toString(),
                     ),
                     SizedBox(height: 12),
                     _buildDetailRow(
                       'Consumption',
-                      reading['consumption'].toString(),
+                      reading.consumption.toString(),
                     ),
                     SizedBox(height: 12),
                     _buildDetailRow(
                       'Date',
-                      _dateFormat.format(reading['created_at']),
+                      _dateFormat.format(reading.createdAt),
                     ),
                     SizedBox(height: 24),
                     Align(
@@ -659,7 +466,6 @@ class ReadingsPageState extends State<ReadingsPage> {
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
-            // Filters
             Row(
               children: [
                 Expanded(
@@ -679,8 +485,8 @@ class ReadingsPageState extends State<ReadingsPage> {
                         DropdownMenuItem(value: null, child: Text('All Rooms')),
                         ...rooms.map(
                           (room) => DropdownMenuItem(
-                            value: room['id'],
-                            child: Text(room['name']),
+                            value: room.id,
+                            child: Text(room.name),
                           ),
                         ),
                       ],
@@ -690,9 +496,10 @@ class ReadingsPageState extends State<ReadingsPage> {
                           if (_filterRoomId == null) {
                             _filterTenantId = null;
                           } else if (_filterTenantId != null) {
-                            final tenant = _findById(tenants, _filterTenantId!);
+                            final tenant = _findTenantById(_filterTenantId!);
+
                             if (tenant == null ||
-                                tenant['room_id'] != _filterRoomId) {
+                                tenant.roomId != _filterRoomId) {
                               _filterTenantId = null;
                             }
                           }
@@ -707,7 +514,7 @@ class ReadingsPageState extends State<ReadingsPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: DropdownButtonFormField<int>(
                       decoration: InputDecoration(
-                        labelText: 'Filter by Tenant',
+                        hintText: 'Choose a tenant',
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 12,
@@ -718,18 +525,19 @@ class ReadingsPageState extends State<ReadingsPage> {
                       items: [
                         DropdownMenuItem(
                           value: null,
-                          child: Text('All Tenants'),
+                          enabled: false,
+                          child: Text('Choose a tenant'),
                         ),
                         ...tenants
                             .where(
                               (t) =>
                                   _filterRoomId == null ||
-                                  t['room_id'] == _filterRoomId,
+                                  t.roomId == _filterRoomId,
                             )
                             .map(
                               (tenant) => DropdownMenuItem(
-                                value: tenant['id'],
-                                child: Text(tenant['name']),
+                                value: tenant.id,
+                                child: Text(tenant.name),
                               ),
                             ),
                       ],
@@ -737,12 +545,11 @@ class ReadingsPageState extends State<ReadingsPage> {
                         setState(() {
                           _filterTenantId = value;
                           if (value != null) {
-                            final tenantRoomId =
-                                tenants.firstWhere(
-                                  (t) => t['id'] == value,
-                                )['room_id'];
-                            if (_filterRoomId != tenantRoomId) {
-                              _filterRoomId = tenantRoomId;
+                            final tenant = tenants.firstWhere(
+                              (t) => t.id == value,
+                            );
+                            if (_filterRoomId != tenant.roomId) {
+                              _filterRoomId = tenant.roomId;
                             }
                           }
                         });
@@ -784,27 +591,23 @@ class ReadingsPageState extends State<ReadingsPage> {
                                   },
                                   cells: [
                                     DataCell(
-                                      Text(_getRoomName(reading['room_id'])),
+                                      Text(_getRoomName(reading.roomId)),
+                                    ),
+                                    DataCell(
+                                      Text(_getTenantName(reading.tenantId)),
+                                    ),
+                                    DataCell(
+                                      Text(reading.prevReading.toString()),
+                                    ),
+                                    DataCell(
+                                      Text(reading.currReading.toString()),
+                                    ),
+                                    DataCell(
+                                      Text(reading.consumption.toString()),
                                     ),
                                     DataCell(
                                       Text(
-                                        _getTenantName(reading['tenant_id']),
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Text(reading['prev_reading'].toString()),
-                                    ),
-                                    DataCell(
-                                      Text(reading['curr_reading'].toString()),
-                                    ),
-                                    DataCell(
-                                      Text(reading['consumption'].toString()),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        _dateFormat.format(
-                                          reading['created_at'],
-                                        ),
+                                        _dateFormat.format(reading.createdAt),
                                       ),
                                     ),
                                     DataCell(
@@ -826,9 +629,8 @@ class ReadingsPageState extends State<ReadingsPage> {
                                               color: Colors.red,
                                             ),
                                             onPressed:
-                                                () => _deleteReading(
-                                                  reading['id'],
-                                                ),
+                                                () =>
+                                                    _deleteReading(reading.id),
                                           ),
                                         ],
                                       ),
@@ -843,7 +645,7 @@ class ReadingsPageState extends State<ReadingsPage> {
         ),
       ),
       floatingActionButton: CustomAddButton(
-        onPressed: () => _addOrEditReadingDialog(),
+        onPressed: () => _addOrEditReadingDialog(reading: null),
         label: 'New Reading',
       ),
     );
