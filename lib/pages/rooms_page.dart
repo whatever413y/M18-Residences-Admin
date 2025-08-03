@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/widgets/custom_add_button.dart';
 import 'package:rental_management_system_flutter/widgets/custom_app_bar.dart';
 import '../services/room_service.dart';
@@ -28,6 +29,7 @@ class _RoomsPageState extends State<RoomsPage> {
         _rooms = rooms;
       });
     } catch (e) {
+      debugPrint('Error loading rooms: $e');
       _showSnackBar('Failed to load rooms');
     }
   }

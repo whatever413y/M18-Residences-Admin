@@ -1,22 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
-class Room {
-  final int id;
-  final String name;
-  final double rent;
-
-  Room({required this.id, required this.name, required this.rent});
-
-  factory Room.fromJson(Map<String, dynamic> json) => Room(
-    id: json['id'],
-    name: json['name'],
-    rent: (json['rent'] as num).toDouble(),
-  );
-
-  Map<String, dynamic> toJson() => {'name': name, 'rent': rent};
-}
+import 'package:rental_management_system_flutter/models/room.dart';
 
 class RoomService {
   static final String baseUrl = '${dotenv.env['API_URL']}/rooms';

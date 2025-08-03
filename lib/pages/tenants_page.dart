@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:rental_management_system_flutter/models/room.dart';
+import 'package:rental_management_system_flutter/models/tenant.dart';
+import 'package:rental_management_system_flutter/services/room_service.dart';
+import 'package:rental_management_system_flutter/services/teanant_service.dart';
 import 'package:rental_management_system_flutter/widgets/custom_add_button.dart';
 import 'package:rental_management_system_flutter/widgets/custom_app_bar.dart';
 
@@ -9,32 +13,49 @@ class TenantsPage extends StatefulWidget {
 }
 
 class TenantsPageState extends State<TenantsPage> {
-  final List<Map<String, dynamic>> tenants = [
-    {
-      "id": 1,
-      "name": "John Doe",
-      "room": "Room A",
-      "joined_date": DateTime(2023, 3, 15),
-    },
-    {
-      "id": 2,
-      "name": "Jane Smith",
-      "room": "Room B",
-      "joined_date": DateTime(2023, 4, 10),
-    },
-  ];
+  final TenantService _tenantService = TenantService();
+  final RoomService _roomService = RoomService();
+
+  List<Tenant> tenants = [];
+  List<Room> rooms = [];
 
   final _tenantNameController = TextEditingController();
-  final _roomNameController = TextEditingController();
+  String? _selectedRoomId;
   DateTime? _selectedJoinDate;
 
-  final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
+  final DateFormat _dateFormat = DateFormat('MMMM d, y');
 
-  void _showTenantDialog({Map<String, dynamic>? tenant}) {
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final fetchedTenants = await _tenantService.fetchTenants();
+      final fetchedRooms = await _roomService.fetchRooms();
+      setState(() {
+        tenants = fetchedTenants;
+        rooms = fetchedRooms;
+      });
+    } catch (e) {
+      debugPrint('Error loading data: $e');
+      _showSnackBar('Failed to load data');
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showTenantDialog({Tenant? tenant}) {
     final isEditing = tenant != null;
-    _tenantNameController.text = tenant?['name'] ?? '';
-    _roomNameController.text = tenant?['room'] ?? '';
-    _selectedJoinDate = tenant?['joined_date'];
+    _tenantNameController.text = tenant?.name ?? '';
+    _selectedRoomId = tenant?.roomId.toString();
+    _selectedJoinDate = tenant?.joinDate;
 
     showDialog(
       context: context,
@@ -50,9 +71,21 @@ class TenantsPageState extends State<TenantsPage> {
                     controller: _tenantNameController,
                     decoration: const InputDecoration(labelText: 'Tenant Name'),
                   ),
-                  TextField(
-                    controller: _roomNameController,
-                    decoration: const InputDecoration(labelText: 'Room Name'),
+                  DropdownButtonFormField<String>(
+                    value: _selectedRoomId,
+                    items:
+                        rooms.map((room) {
+                          return DropdownMenuItem<String>(
+                            value: room.id.toString(),
+                            child: Text(room.name),
+                          );
+                        }).toList(),
+                    onChanged: (value) {
+                      setStateDialog(() {
+                        _selectedRoomId = value;
+                      });
+                    },
+                    decoration: const InputDecoration(labelText: 'Room'),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -98,48 +131,44 @@ class TenantsPageState extends State<TenantsPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue.shade800,
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     final tenantName = _tenantNameController.text.trim();
-                    final roomName = _roomNameController.text.trim();
+                    final roomId = _selectedRoomId;
+                    final joinDate = _selectedJoinDate;
 
                     if (tenantName.isEmpty ||
-                        roomName.isEmpty ||
-                        _selectedJoinDate == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Please fill all fields and pick a join date',
-                          ),
-                        ),
-                      );
+                        roomId == null ||
+                        joinDate == null) {
+                      _showSnackBar('Please fill all fields');
                       return;
                     }
 
-                    setState(() {
+                    try {
                       if (isEditing) {
-                        tenant['name'] = tenantName;
-                        tenant['room'] = roomName;
-                        tenant['joined_date'] = _selectedJoinDate;
+                        await _tenantService.updateTenant(
+                          tenant.id,
+                          tenantName,
+                          int.parse(roomId),
+                          joinDate,
+                        );
                       } else {
-                        tenants.add({
-                          'id': tenants.length + 1,
-                          'name': tenantName,
-                          'room': roomName,
-                          'joined_date': _selectedJoinDate,
-                        });
+                        await _tenantService.createTenant(
+                          tenantName,
+                          int.parse(roomId),
+                          joinDate,
+                        );
                       }
-                    });
 
-                    Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isEditing
-                              ? 'Tenant updated'
-                              : 'Tenant "$tenantName" added',
-                        ),
-                      ),
-                    );
+                      Navigator.of(context).pop();
+                      await _loadData();
+
+                      _showSnackBar(
+                        isEditing ? 'Tenant updated' : 'Tenant added',
+                      );
+                    } catch (e) {
+                      debugPrint('Error saving tenant: $e');
+                      _showSnackBar('Failed to save tenant');
+                    }
                   },
                   child: Text(isEditing ? 'Save' : 'Add'),
                 ),
@@ -151,14 +180,15 @@ class TenantsPageState extends State<TenantsPage> {
     );
   }
 
-  void _deleteTenant(int id) {
-    setState(() {
-      tenants.removeWhere((tenant) => tenant['id'] == id);
-    });
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Tenant deleted')));
+  void _deleteTenant(int id) async {
+    try {
+      await _tenantService.deleteTenant(id);
+      await _loadData();
+      _showSnackBar('Tenant deleted');
+    } catch (e) {
+      debugPrint('Error deleting tenant: $e');
+      _showSnackBar('Failed to delete tenant');
+    }
   }
 
   @override
@@ -174,6 +204,11 @@ class TenantsPageState extends State<TenantsPage> {
                   itemCount: tenants.length,
                   itemBuilder: (context, index) {
                     final tenant = tenants[index];
+                    final room = rooms.firstWhere(
+                      (r) => r.id == tenant.roomId,
+                      orElse: () => Room(id: -1, name: 'Unknown', rent: 0),
+                    );
+
                     return Card(
                       elevation: 3,
                       shape: RoundedRectangleBorder(
@@ -183,14 +218,14 @@ class TenantsPageState extends State<TenantsPage> {
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(16),
                         title: Text(
-                          tenant['name'],
+                          tenant.name,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
                           ),
                         ),
                         subtitle: Text(
-                          'Room: ${tenant['room']}\nJoined: ${tenant['joined_date'] != null ? _dateFormat.format(tenant['joined_date']) : "N/A"}',
+                          'Room: ${room.name}\nJoined: ${_dateFormat.format(tenant.joinDate)}',
                         ),
                         isThreeLine: true,
                         trailing: Row(
@@ -203,7 +238,7 @@ class TenantsPageState extends State<TenantsPage> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _deleteTenant(tenant['id']),
+                              onPressed: () => _deleteTenant(tenant.id),
                             ),
                           ],
                         ),
