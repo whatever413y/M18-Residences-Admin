@@ -22,10 +22,10 @@ class _RoomsPageState extends State<RoomsPage> {
   @override
   void initState() {
     super.initState();
-    _loadRooms();
+    _loadData();
   }
 
-  Future<void> _loadRooms() async {
+  Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
       final rooms = await _roomService.fetchRooms();
@@ -81,8 +81,7 @@ class _RoomsPageState extends State<RoomsPage> {
                     );
                   }
                 }
-
-                await _loadRooms();
+                await _loadData();
               } catch (_) {
                 if (mounted) {
                   CustomSnackbar.show(
@@ -102,7 +101,7 @@ class _RoomsPageState extends State<RoomsPage> {
   Future<void> _deleteRoom(int id) async {
     await _roomService.deleteRoom(id);
     if (!mounted) return;
-    await _loadRooms();
+    await _loadData();
   }
 
   @override
@@ -114,7 +113,7 @@ class _RoomsPageState extends State<RoomsPage> {
       child: Scaffold(
         appBar: const CustomAppBar(title: 'Rooms'),
         body: RefreshIndicator(
-          onRefresh: _loadRooms,
+          onRefresh: _loadData,
           child: LayoutBuilder(
             builder: (context, constraints) {
               double maxWidth =

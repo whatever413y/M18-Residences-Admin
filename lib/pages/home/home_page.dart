@@ -3,7 +3,7 @@ import 'package:rental_management_system_flutter/pages/billings_page.dart';
 import 'package:rental_management_system_flutter/pages/home/widgets/square_button.dart';
 import 'package:rental_management_system_flutter/pages/readings_page.dart';
 import 'package:rental_management_system_flutter/pages/room/rooms_page.dart';
-import 'package:rental_management_system_flutter/pages/tenants_page.dart';
+import 'package:rental_management_system_flutter/pages/tenants/tenants_page.dart';
 import 'package:rental_management_system_flutter/theme.dart';
 import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
 

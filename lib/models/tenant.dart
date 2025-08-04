@@ -1,17 +1,15 @@
 class Tenant {
   final int id;
-  final String name;
   final int roomId;
-  final String roomName;
+  final String name;
   final DateTime joinDate;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   Tenant({
     required this.id,
-    required this.name,
     required this.roomId,
-    required this.roomName,
+    required this.name,
     required this.joinDate,
     required this.createdAt,
     required this.updatedAt,
@@ -19,9 +17,8 @@ class Tenant {
 
   factory Tenant.fromJson(Map<String, dynamic> json) => Tenant(
     id: json['id'],
-    name: json['name'],
     roomId: json['roomId'],
-    roomName: json['roomName'] ?? '',
+    name: json['name'],
     joinDate: DateTime.parse(json['joinDate']),
     createdAt: DateTime.parse(json['createdAt']),
     updatedAt: DateTime.parse(json['updatedAt']),

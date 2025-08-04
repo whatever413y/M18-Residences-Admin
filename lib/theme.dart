@@ -16,6 +16,8 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.lightBackground,
       fontFamily: 'Roboto',
 
+      iconTheme: const IconThemeData(color: AppColors.primaryBlue),
+
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.primaryBlue,
         elevation: 4,
@@ -35,12 +37,19 @@ class AppTheme {
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryBlue,
-          foregroundColor: AppColors.white,
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return AppColors.primaryBlue.withValues(alpha: 0.5);
+            }
+            return AppColors.primaryBlue;
+          }),
+          foregroundColor: WidgetStateProperty.all(AppColors.white),
+          padding: WidgetStateProperty.all(
+            EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          ),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
       ),
