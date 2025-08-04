@@ -95,6 +95,8 @@ class ReadingsPageState extends State<ReadingsPage> {
       context: context,
       builder:
           (context) => ReadingFormDialog(
+            selectedRoomId: _filterRoomId,
+            selectedTenantId: _filterTenantId,
             reading: reading,
             rooms: rooms,
             tenants: tenants,
@@ -151,7 +153,7 @@ class ReadingsPageState extends State<ReadingsPage> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     final bool isNarrow = screenWidth < 500;
-    final horizontalPadding = screenWidth * 0.05; // 5% padding on sides
+    final horizontalPadding = screenWidth * 0.05;
 
     return Theme(
       data: theme,

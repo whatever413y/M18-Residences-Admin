@@ -15,6 +15,8 @@ class ReadingFormDialog extends StatefulWidget {
   final List<Reading> readings;
   final ReadingService readingService;
   final void Function(Reading) onSubmit;
+  final int? selectedRoomId;
+  final int? selectedTenantId;
 
   const ReadingFormDialog({
     super.key,
@@ -24,6 +26,8 @@ class ReadingFormDialog extends StatefulWidget {
     required this.readings,
     required this.readingService,
     required this.onSubmit,
+    required this.selectedRoomId,
+    required this.selectedTenantId,
   });
 
   @override
@@ -31,26 +35,32 @@ class ReadingFormDialog extends StatefulWidget {
 }
 
 class _ReadingFormDialogState extends State<ReadingFormDialog> {
-  late int? selectedRoomId;
-  late int? selectedTenantId;
   final TextEditingController prevController = TextEditingController();
   final TextEditingController currController = TextEditingController();
+  late int? _selectedRoomId;
+  late int? _selectedTenantId;
 
   @override
   void initState() {
     super.initState();
 
     if (widget.reading != null) {
-      selectedRoomId = widget.reading!.roomId;
-      selectedTenantId = widget.reading!.tenantId;
+      _selectedRoomId = widget.reading!.roomId;
+      _selectedTenantId = widget.reading!.tenantId;
       prevController.text = widget.reading!.prevReading.toString();
       currController.text = widget.reading!.currReading.toString();
     } else {
-      selectedRoomId = null;
-      selectedTenantId = null;
-      prevController.text = '0';
+      _selectedRoomId = widget.selectedRoomId;
+      _selectedTenantId = widget.selectedTenantId;
       currController.clear();
     }
+  }
+
+  @override
+  void dispose() {
+    prevController.dispose();
+    currController.dispose();
+    super.dispose();
   }
 
   Reading? _getLatestReading(int roomId, int tenantId) {
@@ -64,11 +74,11 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
 
   void _updatePreviousReading() {
     if (widget.reading != null ||
-        selectedRoomId == null ||
-        selectedTenantId == null) {
+        _selectedRoomId == null ||
+        _selectedTenantId == null) {
       return;
     }
-    final latest = _getLatestReading(selectedRoomId!, selectedTenantId!);
+    final latest = _getLatestReading(_selectedRoomId!, _selectedTenantId!);
     prevController.text = latest?.currReading.toString() ?? '0';
   }
 
@@ -106,7 +116,7 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
   Widget _buildRoomDropdown() {
     return CustomDropdownForm<int>(
       label: 'Select Room',
-      value: selectedRoomId,
+      value: _selectedRoomId,
       items: [
         const DropdownMenuItem<int>(value: null, child: Text('All Rooms')),
         ...widget.rooms.map(
@@ -116,14 +126,14 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
       ],
       onChanged: (value) {
         setState(() {
-          selectedRoomId = value;
+          _selectedRoomId = value;
 
-          if (selectedTenantId != null) {
+          if (_selectedTenantId != null) {
             final tenant = widget.tenants.firstWhereOrNull(
-              (t) => t.id == selectedTenantId,
+              (t) => t.id == _selectedTenantId,
             );
-            if (tenant == null || tenant.roomId != selectedRoomId) {
-              selectedTenantId = null;
+            if (tenant == null || tenant.roomId != _selectedRoomId) {
+              _selectedTenantId = null;
             }
           }
           _updatePreviousReading();
@@ -136,7 +146,7 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
     return CustomDropdownForm<int>(
       label: 'Select Tenant',
       hint: 'Choose a tenant',
-      value: selectedTenantId,
+      value: _selectedTenantId,
       items: [
         const DropdownMenuItem<int>(
           value: null,
@@ -144,7 +154,9 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
           child: Text('Choose a tenant'),
         ),
         ...widget.tenants
-            .where((t) => selectedRoomId == null || t.roomId == selectedRoomId)
+            .where(
+              (t) => _selectedRoomId == null || t.roomId == _selectedRoomId,
+            )
             .map(
               (tenant) => DropdownMenuItem<int>(
                 value: tenant.id,
@@ -154,15 +166,15 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
       ],
       onChanged: (value) {
         setState(() {
-          selectedTenantId = value;
+          _selectedTenantId = value;
 
-          if (selectedTenantId != null) {
+          if (_selectedTenantId != null) {
             final tenantRoomId =
                 widget.tenants
-                    .firstWhere((t) => t.id == selectedTenantId)
+                    .firstWhere((t) => t.id == _selectedTenantId)
                     .roomId;
-            if (selectedRoomId != tenantRoomId) {
-              selectedRoomId = tenantRoomId;
+            if (_selectedRoomId != tenantRoomId) {
+              _selectedRoomId = tenantRoomId;
             }
           }
           _updatePreviousReading();
@@ -175,7 +187,18 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
     return CustomTextFormField(
       controller: prevController,
       labelText: 'Previous Reading',
-      enabled: widget.reading != null,
+      enabled: false,
+      prefixIcon: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Text(
+          '₱',
+          style: TextStyle(
+            color: Theme.of(context).primaryColor,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 
@@ -192,6 +215,17 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
         }
         return null;
       },
+      prefixIcon: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Text(
+          '₱',
+          style: TextStyle(
+            color: Theme.of(context).primaryColor,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 
@@ -199,8 +233,8 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
     final prev = int.tryParse(prevController.text);
     final curr = int.tryParse(currController.text);
 
-    if (selectedRoomId == null ||
-        selectedTenantId == null ||
+    if (_selectedRoomId == null ||
+        _selectedTenantId == null ||
         prev == null ||
         curr == null ||
         curr < prev) {
@@ -218,15 +252,15 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
       final reading =
           widget.reading == null
               ? await widget.readingService.createReading(
-                roomId: selectedRoomId!,
-                tenantId: selectedTenantId!,
+                roomId: _selectedRoomId!,
+                tenantId: _selectedTenantId!,
                 prevReading: prev,
                 currReading: curr,
               )
               : await widget.readingService.updateReading(
                 id: widget.reading!.id,
-                roomId: selectedRoomId!,
-                tenantId: selectedTenantId!,
+                roomId: _selectedRoomId!,
+                tenantId: _selectedTenantId!,
                 prevReading: prev,
                 currReading: curr,
               );

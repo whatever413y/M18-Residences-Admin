@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rental_management_system_flutter/pages/billings_page.dart';
+import 'package:rental_management_system_flutter/pages/billing/billings_page.dart';
 import 'package:rental_management_system_flutter/pages/home/widgets/square_button.dart';
 import 'package:rental_management_system_flutter/pages/reading/readings_page.dart';
 import 'package:rental_management_system_flutter/pages/room/rooms_page.dart';
@@ -25,6 +25,7 @@ class HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final theme = AppTheme.lightTheme;
     final primaryColor = theme.primaryColor;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Theme(
       data: theme,
@@ -45,7 +46,9 @@ class HomePageState extends State<HomePage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 500),
+                constraints: BoxConstraints(
+                  maxWidth: screenWidth < 600 ? screenWidth : 500,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [

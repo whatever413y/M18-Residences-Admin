@@ -27,6 +27,7 @@ class LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final theme = AppTheme.lightTheme;
     final primaryColor = theme.primaryColor;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Theme(
       data: theme,
@@ -46,7 +47,9 @@ class LoginPageState extends State<LoginPage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
+                constraints: BoxConstraints(
+                  maxWidth: screenWidth < 600 ? screenWidth : 500,
+                ),
                 child: LoginCard(
                   formKey: _formKey,
                   usernameController: _usernameController,
