@@ -41,69 +41,87 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
 
     return AlertDialog(
       title: Text(isEditing ? 'Edit Room' : 'Add New Room'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CustomTextFormField(
-              controller: _roomNameController,
-              labelText: 'Room Name',
-              autofocus: true,
-              textInputAction: TextInputAction.next,
-              validator:
-                  (value) =>
-                      (value == null || value.trim().isEmpty)
-                          ? 'Enter room name'
-                          : null,
-              prefixIcon: Icon(
-                Icons.meeting_room,
-                color: Theme.of(context).primaryColor,
-              ),
-            ),
-            const SizedBox(height: 12),
-            CustomTextFormField(
-              controller: _rentController,
-              labelText: 'Rent',
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.done,
-              validator: (value) {
-                final parsed = double.tryParse(value ?? '');
-                if (parsed == null || parsed < 0) {
-                  return 'Enter a valid rent amount';
-                }
-                return null;
-              },
-              prefixIcon: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Text(
-                  '₱',
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              onFieldSubmitted: (_) => _submitForm(),
-            ),
-          ],
+      content: _buildContent(),
+      actions: _buildActions(),
+    );
+  }
+
+  Widget _buildContent() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildRoomNameField(),
+          const SizedBox(height: 12),
+          _buildRentField(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoomNameField() {
+    return CustomTextFormField(
+      controller: _roomNameController,
+      labelText: 'Room Name',
+      autofocus: true,
+      textInputAction: TextInputAction.next,
+      validator:
+          (value) =>
+              (value == null || value.trim().isEmpty)
+                  ? 'Enter room name'
+                  : null,
+      prefixIcon: Icon(
+        Icons.meeting_room,
+        color: Theme.of(context).primaryColor,
+      ),
+    );
+  }
+
+  Widget _buildRentField() {
+    return CustomTextFormField(
+      controller: _rentController,
+      labelText: 'Rent',
+      keyboardType: TextInputType.number,
+      textInputAction: TextInputAction.done,
+      validator: (value) {
+        final parsed = double.tryParse(value ?? '');
+        if (parsed == null || parsed < 0) {
+          return 'Enter a valid rent amount';
+        }
+        return null;
+      },
+      prefixIcon: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Text(
+          '₱',
+          style: TextStyle(
+            color: Theme.of(context).primaryColor,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-        ),
-        ElevatedButton(
-          onPressed: _submitForm,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).primaryColor,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          ),
-          child: Text(isEditing ? 'Save' : 'Add'),
-        ),
-      ],
+      onFieldSubmitted: (_) => _submitForm(),
     );
+  }
+
+  List<Widget> _buildActions() {
+    final isEditing = widget.room != null;
+
+    return [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(false),
+        child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+      ),
+      ElevatedButton(
+        onPressed: _submitForm,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).primaryColor,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        ),
+        child: Text(isEditing ? 'Save' : 'Add'),
+      ),
+    ];
   }
 }

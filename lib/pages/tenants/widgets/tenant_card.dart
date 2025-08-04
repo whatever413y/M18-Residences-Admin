@@ -27,28 +27,40 @@ class TenantCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
-        title: Text(
-          tenant.name,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        subtitle: Text(
-          'Room: ${room.name}\nJoined: ${dateFormat.format(tenant.joinDate)}',
-        ),
+        title: _buildTitle(),
+        subtitle: _buildSubtitle(dateFormat),
         isThreeLine: true,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit, color: Colors.blue),
-              onPressed: onEdit,
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: onDelete,
-            ),
-          ],
-        ),
+        trailing: _buildActions(),
       ),
+    );
+  }
+
+  Widget _buildTitle() {
+    return Text(
+      tenant.name,
+      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+    );
+  }
+
+  Widget _buildSubtitle(DateFormat dateFormat) {
+    return Text(
+      'Room: ${room.name}\nJoined: ${dateFormat.format(tenant.joinDate)}',
+    );
+  }
+
+  Widget _buildActions() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.edit, color: Colors.blue),
+          onPressed: onEdit,
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: onDelete,
+        ),
+      ],
     );
   }
 }

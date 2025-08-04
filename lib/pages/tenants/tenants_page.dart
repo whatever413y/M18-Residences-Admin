@@ -46,7 +46,7 @@ class _TenantsPageState extends State<TenantsPage> {
       if (mounted) {
         CustomSnackbar.show(
           context,
-          'Failed to load rooms',
+          'Failed to load data',
           type: SnackBarType.error,
         );
       }
@@ -139,52 +139,8 @@ class _TenantsPageState extends State<TenantsPage> {
                         padding: const EdgeInsets.all(16),
                         child:
                             _tenants.isEmpty
-                                ? const Center(
-                                  child: Text('No tenants available.'),
-                                )
-                                : ListView.builder(
-                                  itemCount: _tenants.length,
-                                  itemBuilder: (context, index) {
-                                    final tenant = _tenants[index];
-                                    final room = _rooms.firstWhere(
-                                      (r) => r.id == tenant.roomId,
-                                      orElse:
-                                          () => Room(
-                                            id: -1,
-                                            name: 'Unknown',
-                                            rent: 0,
-                                          ),
-                                    );
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 8.0,
-                                      ),
-                                      child: TenantCard(
-                                        tenant: tenant,
-                                        room: room,
-                                        onEdit:
-                                            () => _showTenantDialog(
-                                              tenant: tenant,
-                                            ),
-                                        onDelete: () async {
-                                          await showConfirmationAction(
-                                            context: context,
-                                            confirmTitle: 'Confirm Deletion',
-                                            confirmContent:
-                                                'Are you sure you want to delete this tenant?',
-                                            loadingMessage: 'Deleting...',
-                                            successMessage: 'Tenant deleted',
-                                            failureMessage:
-                                                'Failed to delete tenant',
-                                            onConfirmed: () async {
-                                              await _deleteTenant(tenant.id);
-                                            },
-                                          );
-                                        },
-                                      ),
-                                    );
-                                  },
-                                ),
+                                ? _buildNoTenantsMessage()
+                                : _buildTenantList(),
                       ),
                     );
                   },
@@ -194,6 +150,44 @@ class _TenantsPageState extends State<TenantsPage> {
           label: 'New Tenant',
         ),
       ),
+    );
+  }
+
+  Widget _buildNoTenantsMessage() {
+    return const Center(child: Text('No tenants available.'));
+  }
+
+  Widget _buildTenantList() {
+    return ListView.builder(
+      itemCount: _tenants.length,
+      itemBuilder: (context, index) {
+        final tenant = _tenants[index];
+        final room = _rooms.firstWhere(
+          (r) => r.id == tenant.roomId,
+          orElse: () => Room(id: -1, name: 'Unknown', rent: 0),
+        );
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: TenantCard(
+            tenant: tenant,
+            room: room,
+            onEdit: () => _showTenantDialog(tenant: tenant),
+            onDelete: () async {
+              await showConfirmationAction(
+                context: context,
+                confirmTitle: 'Confirm Deletion',
+                confirmContent: 'Are you sure you want to delete this tenant?',
+                loadingMessage: 'Deleting...',
+                successMessage: 'Tenant deleted',
+                failureMessage: 'Failed to delete tenant',
+                onConfirmed: () async {
+                  await _deleteTenant(tenant.id);
+                },
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

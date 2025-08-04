@@ -31,6 +31,7 @@ Future<bool> showConfirmationAction({
 
   if (confirmed != true) return false;
 
+  // ignore: use_build_context_synchronously
   final messenger = ScaffoldMessenger.of(context);
 
   try {

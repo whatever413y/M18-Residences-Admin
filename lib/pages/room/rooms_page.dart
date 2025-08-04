@@ -32,11 +32,11 @@ class _RoomsPageState extends State<RoomsPage> {
       if (!mounted) return;
       setState(() => _rooms = rooms);
     } catch (e) {
-      debugPrint('Error loading rooms: $e');
+      debugPrint('Error loading data: $e');
       if (mounted) {
         CustomSnackbar.show(
           context,
-          'Failed to load rooms',
+          'Failed to load data',
           type: SnackBarType.error,
         );
       }
@@ -107,7 +107,6 @@ class _RoomsPageState extends State<RoomsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.lightTheme;
-
     return Theme(
       data: theme,
       child: Scaffold(
@@ -125,38 +124,10 @@ class _RoomsPageState extends State<RoomsPage> {
                   padding: const EdgeInsets.all(16),
                   child:
                       _isLoading
-                          ? const Center(child: CircularProgressIndicator())
+                          ? _buildLoading()
                           : _rooms.isEmpty
-                          ? const Center(child: Text('No rooms available.'))
-                          : ListView.builder(
-                            itemCount: _rooms.length,
-                            itemBuilder: (context, index) {
-                              final room = _rooms[index];
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8.0,
-                                ),
-                                child: RoomCard(
-                                  room: room,
-                                  onEdit: () => _showRoomDialog(room: room),
-                                  onDelete: () async {
-                                    await showConfirmationAction(
-                                      context: context,
-                                      confirmTitle: 'Confirm Deletion',
-                                      confirmContent:
-                                          'Are you sure you want to delete this room?',
-                                      loadingMessage: 'Deleting...',
-                                      successMessage: 'Room deleted',
-                                      failureMessage: 'Failed to delete room',
-                                      onConfirmed: () async {
-                                        await _deleteRoom(room.id);
-                                      },
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                          ),
+                          ? _buildNoRoomsMessage()
+                          : _buildRoomList(),
                 ),
               );
             },
@@ -167,6 +138,43 @@ class _RoomsPageState extends State<RoomsPage> {
           label: 'New Room',
         ),
       ),
+    );
+  }
+
+  Widget _buildLoading() {
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  Widget _buildNoRoomsMessage() {
+    return const Center(child: Text('No rooms available.'));
+  }
+
+  Widget _buildRoomList() {
+    return ListView.builder(
+      itemCount: _rooms.length,
+      itemBuilder: (context, index) {
+        final room = _rooms[index];
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: RoomCard(
+            room: room,
+            onEdit: () => _showRoomDialog(room: room),
+            onDelete: () async {
+              await showConfirmationAction(
+                context: context,
+                confirmTitle: 'Confirm Deletion',
+                confirmContent: 'Are you sure you want to delete this room?',
+                loadingMessage: 'Deleting...',
+                successMessage: 'Room deleted',
+                failureMessage: 'Failed to delete room',
+                onConfirmed: () async {
+                  await _deleteRoom(room.id);
+                },
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

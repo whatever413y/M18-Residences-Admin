@@ -34,14 +34,10 @@ class Reading {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'tenantId': tenantId,
       'roomId': roomId,
       'prevReading': prevReading,
       'currReading': currReading,
-      'consumption': consumption,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 }
