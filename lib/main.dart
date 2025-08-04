@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'pages/login_page.dart';
+import 'pages/login/login_page.dart';
 import 'theme.dart';
 
 Future<void> main() async {

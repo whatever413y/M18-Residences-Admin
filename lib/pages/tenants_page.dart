@@ -4,8 +4,8 @@ import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
 import 'package:rental_management_system_flutter/services/room_service.dart';
 import 'package:rental_management_system_flutter/services/tenant_service.dart';
-import 'package:rental_management_system_flutter/widgets/custom_add_button.dart';
-import 'package:rental_management_system_flutter/widgets/custom_app_bar.dart';
+import 'package:rental_management_system_flutter/utils/custom_add_button.dart';
+import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
 
 class TenantsPage extends StatefulWidget {
   @override

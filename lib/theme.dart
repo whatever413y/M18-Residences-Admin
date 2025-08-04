@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primaryBlue = Color(0xFF0D47A1); // blue.shade900
-  static const Color secondaryBlue = Color(0xFF42A5F5); // blue.shade500
+  static const Color primaryBlue = Color(0xFF0D47A1);
+  static const Color secondaryBlue = Color(0xFF42A5F5);
   static const Color accentGreen = Color(0xFF4CAF50);
   static const Color white = Colors.white;
   static const Color lightBackground = Color(0xFFF0F4F8);
@@ -16,9 +16,11 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.lightBackground,
       fontFamily: 'Roboto',
 
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.primaryBlue,
+        elevation: 4,
         iconTheme: IconThemeData(color: AppColors.white),
+        actionsIconTheme: IconThemeData(color: AppColors.white),
         titleTextStyle: TextStyle(
           color: AppColors.white,
           fontWeight: FontWeight.bold,
@@ -88,7 +90,7 @@ class AppTheme {
           if (states.contains(WidgetState.selected)) {
             return AppColors.primaryBlue.withAlpha(51);
           }
-          return null; // default
+          return null;
         }),
         dataTextStyle: TextStyle(color: Colors.black87, fontSize: 14),
         dividerThickness: 1,

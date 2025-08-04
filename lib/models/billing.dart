@@ -4,7 +4,7 @@ class Bill {
   final int readingId;
   final int roomCharges;
   final int electricCharges;
-  final int additionalCharges;
+  final int? additionalCharges;
   final String? additionalDescription;
   final int totalAmount;
   final DateTime createdAt;
@@ -16,7 +16,7 @@ class Bill {
     required this.readingId,
     required this.roomCharges,
     required this.electricCharges,
-    required this.additionalCharges,
+    this.additionalCharges,
     this.additionalDescription,
     required this.totalAmount,
     required this.createdAt,
@@ -26,8 +26,8 @@ class Bill {
   factory Bill.fromJson(Map<String, dynamic> json) {
     return Bill(
       id: json['id'],
-      tenantId: json['tenantId'],
       readingId: json['readingId'],
+      tenantId: json['tenantId'],
       roomCharges: json['roomCharges'],
       electricCharges: json['electricCharges'],
       additionalCharges: json['additionalCharges'],
@@ -40,8 +40,8 @@ class Bill {
 
   Map<String, dynamic> toJson() {
     return {
-      'tenantId': tenantId,
       'readingId': readingId,
+      'tenantId': tenantId,
       'roomCharges': roomCharges,
       'electricCharges': electricCharges,
       'additionalCharges': additionalCharges,

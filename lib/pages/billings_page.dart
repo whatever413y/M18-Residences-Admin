@@ -9,8 +9,8 @@ import 'package:rental_management_system_flutter/services/billing_service.dart';
 import 'package:rental_management_system_flutter/services/reading_service.dart';
 import 'package:rental_management_system_flutter/services/room_service.dart';
 import 'package:rental_management_system_flutter/services/tenant_service.dart';
-import 'package:rental_management_system_flutter/widgets/custom_add_button.dart';
-import 'package:rental_management_system_flutter/widgets/custom_app_bar.dart';
+import 'package:rental_management_system_flutter/utils/custom_add_button.dart';
+import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
 
 class BillingsPage extends StatefulWidget {
   @override
@@ -426,7 +426,7 @@ class BillingsPageState extends State<BillingsPage> {
                       'Room Charges',
                       '₱${(bill.roomCharges).toString()}',
                     ),
-                    if (bill.additionalCharges > 0) ...[
+                    if (bill.additionalCharges! > 0) ...[
                       SizedBox(height: 12),
                       _buildDetailRow(
                         'Additional Charges',
@@ -701,7 +701,7 @@ class BillingsPageState extends State<BillingsPage> {
                                     DataCell(Text(bill.roomCharges.toString())),
                                     DataCell(
                                       Text(
-                                        bill.additionalCharges > 0
+                                        bill.additionalCharges! > 0
                                             ? bill.additionalCharges.toString()
                                             : '-',
                                       ),
