@@ -4,7 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:rental_management_system_flutter/models/reading.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
-import 'package:rental_management_system_flutter/services/readings_service.dart';
+import 'package:rental_management_system_flutter/services/reading_service.dart';
 import 'package:rental_management_system_flutter/services/room_service.dart';
 import 'package:rental_management_system_flutter/services/tenant_service.dart';
 import 'package:rental_management_system_flutter/widgets/custom_add_button.dart';
@@ -54,11 +54,6 @@ class ReadingsPageState extends State<ReadingsPage> {
       _showSnackBar('Failed to load data');
     }
   }
-
-  List<Tenant> get _filteredTenants =>
-      _selectedRoomId == null
-          ? tenants
-          : tenants.where((t) => t.roomId == _selectedRoomId).toList();
 
   List<Reading> get _filteredReadings =>
       readings.where((r) {
@@ -134,6 +129,7 @@ class ReadingsPageState extends State<ReadingsPage> {
                         children: [
                           DropdownButtonFormField<int>(
                             decoration: InputDecoration(
+                              labelText: 'Select Room',
                               border: OutlineInputBorder(),
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -185,6 +181,7 @@ class ReadingsPageState extends State<ReadingsPage> {
                           SizedBox(height: 16),
                           DropdownButtonFormField<int>(
                             decoration: InputDecoration(
+                              labelText: 'Select Tenant',
                               hintText: 'Choose a tenant',
                               border: OutlineInputBorder(),
                               contentPadding: EdgeInsets.symmetric(
@@ -199,12 +196,18 @@ class ReadingsPageState extends State<ReadingsPage> {
                                 enabled: false,
                                 child: Text('Choose a tenant'),
                               ),
-                              ..._filteredTenants.map(
-                                (tenant) => DropdownMenuItem<int>(
-                                  value: tenant.id,
-                                  child: Text(tenant.name),
-                                ),
-                              ),
+                              ...tenants
+                                  .where(
+                                    (t) =>
+                                        _selectedRoomId == null ||
+                                        t.roomId == _selectedRoomId,
+                                  )
+                                  .map(
+                                    (tenant) => DropdownMenuItem<int>(
+                                      value: tenant.id,
+                                      child: Text(tenant.name),
+                                    ),
+                                  ),
                             ],
                             onChanged: (value) {
                               setStateDialog(() {
@@ -383,17 +386,17 @@ class ReadingsPageState extends State<ReadingsPage> {
                     SizedBox(height: 12),
                     _buildDetailRow(
                       'Previous Reading',
-                      reading.prevReading.toString(),
+                      '${reading.prevReading} kWh',
                     ),
                     SizedBox(height: 12),
                     _buildDetailRow(
                       'Current Reading',
-                      reading.currReading.toString(),
+                      '${reading.currReading} kWh',
                     ),
                     SizedBox(height: 12),
                     _buildDetailRow(
                       'Consumption',
-                      reading.consumption.toString(),
+                      '${reading.consumption} kWh',
                     ),
                     SizedBox(height: 12),
                     _buildDetailRow(
@@ -514,6 +517,7 @@ class ReadingsPageState extends State<ReadingsPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: DropdownButtonFormField<int>(
                       decoration: InputDecoration(
+                        labelText: 'Filter by Tenant',
                         hintText: 'Choose a tenant',
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(
@@ -577,9 +581,9 @@ class ReadingsPageState extends State<ReadingsPage> {
                           columns: const [
                             DataColumn(label: Text('Room')),
                             DataColumn(label: Text('Tenant')),
-                            DataColumn(label: Text('Prev Reading')),
-                            DataColumn(label: Text('Curr Reading')),
-                            DataColumn(label: Text('Consumption')),
+                            DataColumn(label: Text('Previous (kWh)')),
+                            DataColumn(label: Text('Current (kWh)')),
+                            DataColumn(label: Text('Consumption (kWh)')),
                             DataColumn(label: Text('Date')),
                             DataColumn(label: Text('Actions')),
                           ],
