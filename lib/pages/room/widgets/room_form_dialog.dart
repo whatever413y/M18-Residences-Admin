@@ -31,7 +31,7 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
       final name = _roomNameController.text.trim();
       final rent = double.parse(_rentController.text.trim());
       widget.onSubmit(name, rent);
-      Navigator.pop(context);
+      Navigator.of(context).pop(true);
     }
   }
 
@@ -92,7 +92,7 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.of(context).pop(false),
           child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
         ),
         ElevatedButton(

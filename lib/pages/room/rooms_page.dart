@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/pages/room/widgets/room_card.dart';
 import 'package:rental_management_system_flutter/pages/room/widgets/room_form_dialog.dart';
+import 'package:rental_management_system_flutter/utils/confirmation_action.dart';
 import 'package:rental_management_system_flutter/utils/custom_add_button.dart';
 import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
 import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
 import '../../services/room_service.dart';
+import 'package:rental_management_system_flutter/theme.dart';
 
 class RoomsPage extends StatefulWidget {
   @override
@@ -98,92 +100,73 @@ class _RoomsPageState extends State<RoomsPage> {
   }
 
   Future<void> _deleteRoom(int id) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text('Confirm Deletion'),
-            content: const Text('Are you sure you want to delete this room?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
-          ),
-    );
-
-    if (confirmed == true) {
-      try {
-        if (mounted) {
-          CustomSnackbar.show(
-            context,
-            'Deleting...',
-            type: SnackBarType.loading,
-          );
-        }
-
-        await _roomService.deleteRoom(id);
-
-        if (mounted) {
-          CustomSnackbar.show(
-            context,
-            'Room deleted',
-            type: SnackBarType.success,
-          );
-        }
-
-        await _loadRooms();
-      } catch (e) {
-        if (mounted) {
-          CustomSnackbar.show(
-            context,
-            'Failed to delete room',
-            type: SnackBarType.error,
-          );
-        }
-      } finally {
-        if (mounted) CustomSnackbar.hide(context);
-      }
-    }
+    await _roomService.deleteRoom(id);
+    if (!mounted) return;
+    await _loadRooms();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const CustomAppBar(title: 'Rooms'),
-      body: RefreshIndicator(
-        onRefresh: _loadRooms,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child:
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _rooms.isEmpty
-                  ? const Center(child: Text('No rooms available.'))
-                  : ListView.builder(
-                    itemCount: _rooms.length,
-                    itemBuilder: (context, index) {
-                      final room = _rooms[index];
-                      return RoomCard(
-                        room: room,
-                        onEdit: () => _showRoomDialog(room: room),
-                        onDelete: () => _deleteRoom(room.id),
-                      );
-                    },
-                  ),
+    final theme = AppTheme.lightTheme;
+
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        appBar: const CustomAppBar(title: 'Rooms'),
+        body: RefreshIndicator(
+          onRefresh: _loadRooms,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              double maxWidth =
+                  constraints.maxWidth > 600 ? 600 : constraints.maxWidth;
+
+              return Center(
+                child: Container(
+                  width: maxWidth,
+                  padding: const EdgeInsets.all(16),
+                  child:
+                      _isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : _rooms.isEmpty
+                          ? const Center(child: Text('No rooms available.'))
+                          : ListView.builder(
+                            itemCount: _rooms.length,
+                            itemBuilder: (context, index) {
+                              final room = _rooms[index];
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                ),
+                                child: RoomCard(
+                                  room: room,
+                                  onEdit: () => _showRoomDialog(room: room),
+                                  onDelete: () async {
+                                    await showConfirmationAction(
+                                      context: context,
+                                      confirmTitle: 'Confirm Deletion',
+                                      confirmContent:
+                                          'Are you sure you want to delete this room?',
+                                      loadingMessage: 'Deleting...',
+                                      successMessage: 'Room deleted',
+                                      failureMessage: 'Failed to delete room',
+                                      onConfirmed: () async {
+                                        await _deleteRoom(room.id);
+                                      },
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                ),
+              );
+            },
+          ),
         ),
-      ),
-      floatingActionButton: CustomAddButton(
-        onPressed: () => _showRoomDialog(),
-        label: 'New Room',
+        floatingActionButton: CustomAddButton(
+          onPressed: () => _showRoomDialog(),
+          label: 'New Room',
+        ),
       ),
     );
   }

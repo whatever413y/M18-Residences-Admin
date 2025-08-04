@@ -10,6 +10,42 @@ class CustomSnackbar {
     Duration duration = const Duration(seconds: 3),
     bool dismissPrevious = true,
   }) {
+    final messenger = ScaffoldMessenger.of(context);
+    showWithMessenger(
+      messenger,
+      message,
+      type: type,
+      duration: duration,
+      dismissPrevious: dismissPrevious,
+    );
+  }
+
+  static void showWithMessenger(
+    ScaffoldMessengerState messenger,
+    String message, {
+    SnackBarType type = SnackBarType.info,
+    Duration duration = const Duration(seconds: 3),
+    bool dismissPrevious = true,
+  }) {
+    final snackBar = _buildSnackBar(messenger.context, message, type, duration);
+    if (dismissPrevious) messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(snackBar);
+  }
+
+  static void hide(BuildContext context) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  }
+
+  static void hideWithMessenger(ScaffoldMessengerState messenger) {
+    messenger.hideCurrentSnackBar();
+  }
+
+  static SnackBar _buildSnackBar(
+    BuildContext context,
+    String message,
+    SnackBarType type,
+    Duration duration,
+  ) {
     final theme = Theme.of(context);
 
     final Map<SnackBarType, Color> colorMap = {
@@ -41,7 +77,7 @@ class CustomSnackbar {
             )
             : Icon(iconMap[type], color: contentColor);
 
-    final snackBar = SnackBar(
+    return SnackBar(
       behavior: SnackBarBehavior.floating,
       backgroundColor: colorMap[type],
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -63,13 +99,5 @@ class CustomSnackbar {
         ],
       ),
     );
-
-    final messenger = ScaffoldMessenger.of(context);
-    if (dismissPrevious) messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(snackBar);
-  }
-
-  static void hide(BuildContext context) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
   }
 }
