@@ -52,6 +52,12 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
     } else {
       _selectedRoomId = widget.selectedRoomId;
       _selectedTenantId = widget.selectedTenantId;
+      prevController.text =
+          _getLatestReading(
+            _selectedRoomId ?? 0,
+            _selectedTenantId ?? 0,
+          )?.currReading.toString() ??
+          '0';
       currController.clear();
     }
   }

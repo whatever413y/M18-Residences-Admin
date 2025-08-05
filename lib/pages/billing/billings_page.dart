@@ -12,8 +12,10 @@ import 'package:rental_management_system_flutter/services/reading_service.dart';
 import 'package:rental_management_system_flutter/services/room_service.dart';
 import 'package:rental_management_system_flutter/services/tenant_service.dart';
 import 'package:rental_management_system_flutter/theme.dart';
+import 'package:rental_management_system_flutter/utils/confirmation_action.dart';
 import 'package:rental_management_system_flutter/utils/custom_add_button.dart';
 import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
+import 'package:rental_management_system_flutter/utils/custom_dropdown_form.dart';
 import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
 
 class BillingsPage extends StatefulWidget {
@@ -83,7 +85,8 @@ class BillingsPageState extends State<BillingsPage> {
   List<Bill> get _filteredBills {
     return bills.where((bill) {
       final matchRoom =
-          _filterRoomId == null || bill.roomCharges == _filterRoomId;
+          _filterRoomId == null ||
+          _getRoomIdByTenantId(bill.tenantId) == _filterRoomId;
       final matchTenant =
           _filterTenantId == null || bill.tenantId == _filterTenantId;
       final matchYear =
@@ -113,7 +116,7 @@ class BillingsPageState extends State<BillingsPage> {
     return filtered.isNotEmpty ? filtered.first : null;
   }
 
-  void _openBillDialog({Bill? bill}) {
+  void _showBillDialog({Bill? bill}) {
     showDialog(
       context: context,
       builder: (context) {
@@ -194,7 +197,7 @@ class BillingsPageState extends State<BillingsPage> {
     return Theme(
       data: theme,
       child: Scaffold(
-        appBar: CustomAppBar(title: 'Billing'),
+        appBar: const CustomAppBar(title: 'Billing'),
         body: RefreshIndicator(
           onRefresh: _loadData,
           child: Center(
@@ -211,9 +214,23 @@ class BillingsPageState extends State<BillingsPage> {
                           isNarrow
                               ? Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: _buildFiltersChildren(isNarrow),
+                                children: [
+                                  _buildRoomFilter(),
+                                  const SizedBox(height: 12),
+                                  _buildTenantFilter(),
+                                  const SizedBox(height: 12),
+                                  _buildYearFilter(),
+                                ],
                               )
-                              : Row(children: _buildFiltersChildren(isNarrow)),
+                              : Row(
+                                children: [
+                                  Expanded(child: _buildRoomFilter()),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _buildTenantFilter()),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _buildYearFilter()),
+                                ],
+                              ),
                           const SizedBox(height: 12),
                           Expanded(child: _buildBillTable()),
                         ],
@@ -222,53 +239,25 @@ class BillingsPageState extends State<BillingsPage> {
           ),
         ),
         floatingActionButton: CustomAddButton(
-          onPressed: () => _openBillDialog(bill: null),
+          onPressed: () => _showBillDialog(bill: null),
           label: 'Generate New Bill',
         ),
       ),
     );
   }
 
-  List<Widget> _buildFiltersChildren(bool isNarrow) {
-    if (isNarrow) {
-      return [
-        _buildRoomFilter(padding: const EdgeInsets.only(bottom: 12)),
-        _buildTenantFilter(padding: const EdgeInsets.only(bottom: 12)),
-        _buildYearFilter(padding: EdgeInsets.zero),
-      ];
-    } else {
-      return [
-        Expanded(
-          child: _buildRoomFilter(padding: const EdgeInsets.only(left: 8)),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildTenantFilter(padding: const EdgeInsets.only(left: 8)),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildYearFilter(padding: const EdgeInsets.only(left: 8)),
-        ),
-      ];
-    }
-  }
-
-  Widget _buildRoomFilter({EdgeInsetsGeometry? padding}) {
+  Widget _buildRoomFilter() {
     return Padding(
-      padding: padding ?? EdgeInsets.zero,
-      child: DropdownButtonFormField<int>(
-        decoration: const InputDecoration(
-          labelText: 'Filter by Room',
-          border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        ),
-        value: _filterRoomId,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: CustomDropdownForm<int>(
+        label: 'Filter by Room',
         items: [
-          const DropdownMenuItem<int>(value: null, child: Text('All Rooms')),
+          DropdownMenuItem(value: null, child: Text('All Rooms')),
           ...rooms.map(
             (room) => DropdownMenuItem(value: room.id, child: Text(room.name)),
           ),
         ],
+        value: _filterRoomId,
         onChanged: (value) {
           setState(() {
             _filterRoomId = value;
@@ -286,19 +275,14 @@ class BillingsPageState extends State<BillingsPage> {
     );
   }
 
-  Widget _buildTenantFilter({EdgeInsetsGeometry? padding}) {
+  Widget _buildTenantFilter() {
     return Padding(
-      padding: padding ?? EdgeInsets.zero,
-      child: DropdownButtonFormField<int>(
-        decoration: const InputDecoration(
-          labelText: 'Filter by Tenant',
-          hintText: 'Choose a tenant',
-          border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        ),
-        value: _filterTenantId,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: CustomDropdownForm<int>(
+        label: 'Filter by Tenant',
+        hint: 'Choose a tenant',
         items: [
-          const DropdownMenuItem<int>(
+          DropdownMenuItem(
             value: null,
             enabled: false,
             child: Text('Choose a tenant'),
@@ -306,20 +290,20 @@ class BillingsPageState extends State<BillingsPage> {
           ...tenants
               .where((t) => _filterRoomId == null || t.roomId == _filterRoomId)
               .map(
-                (tenant) => DropdownMenuItem<int>(
+                (tenant) => DropdownMenuItem(
                   value: tenant.id,
                   child: Text(tenant.name),
                 ),
               ),
         ],
-        onChanged: (val) {
+        value: _filterTenantId,
+        onChanged: (value) {
           setState(() {
-            _filterTenantId = val;
-            if (val != null) {
-              final tenantRoomId =
-                  tenants.firstWhere((t) => t.id == val).roomId;
-              if (_filterRoomId != tenantRoomId) {
-                _filterRoomId = tenantRoomId;
+            _filterTenantId = value;
+            if (value != null) {
+              final tenant = tenants.firstWhere((t) => t.id == value);
+              if (_filterRoomId != tenant.roomId) {
+                _filterRoomId = tenant.roomId;
               }
             }
           });
@@ -328,29 +312,20 @@ class BillingsPageState extends State<BillingsPage> {
     );
   }
 
-  Widget _buildYearFilter({EdgeInsetsGeometry? padding}) {
+  Widget _buildYearFilter() {
     final years = bills.map((b) => b.createdAt.year).toSet().toList()..sort();
 
     return Padding(
-      padding: padding ?? EdgeInsets.zero,
-      child: DropdownButtonFormField<int>(
-        decoration: const InputDecoration(
-          labelText: 'Filter by Year',
-          hintText: 'Choose a year',
-          border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        ),
-        value: _filterYear,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: CustomDropdownForm<int>(
+        label: 'Filter by Year',
         items: [
-          const DropdownMenuItem<int>(
-            value: null,
-            enabled: false,
-            child: Text('All Years'),
-          ),
+          const DropdownMenuItem<int>(value: null, child: Text('All Years')),
           ...years.map(
             (y) => DropdownMenuItem(value: y, child: Text(y.toString())),
           ),
         ],
+        value: _filterYear,
         onChanged: (val) {
           setState(() {
             _filterYear = val;
@@ -421,11 +396,24 @@ class BillingsPageState extends State<BillingsPage> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _openBillDialog(bill: bill),
+                          onPressed: () => _showBillDialog(bill: bill),
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _deleteBill(bill.id),
+                          onPressed: () async {
+                            await showConfirmationAction(
+                              context: context,
+                              confirmTitle: 'Confirm Deletion',
+                              confirmContent:
+                                  'Are you sure you want to delete this bill?',
+                              loadingMessage: 'Deleting...',
+                              successMessage: 'Bill deleted',
+                              failureMessage: 'Failed to delete bill',
+                              onConfirmed: () async {
+                                _deleteBill(bill.id);
+                              },
+                            );
+                          },
                         ),
                       ],
                     ),

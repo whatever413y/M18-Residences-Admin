@@ -314,10 +314,10 @@ class ReadingsPageState extends State<ReadingsPage> {
                               context: context,
                               confirmTitle: 'Confirm Deletion',
                               confirmContent:
-                                  'Are you sure you want to delete this tenant?',
+                                  'Are you sure you want to delete this reading?',
                               loadingMessage: 'Deleting...',
-                              successMessage: 'Tenant deleted',
-                              failureMessage: 'Failed to delete tenant',
+                              successMessage: 'Reading deleted',
+                              failureMessage: 'Failed to delete reading',
                               onConfirmed: () async {
                                 _deleteReading(reading.id);
                               },
