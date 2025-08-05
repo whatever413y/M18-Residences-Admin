@@ -44,10 +44,12 @@ class _TenantsPageState extends State<TenantsPage> {
       if (tenant != null) {
         bloc.add(
           UpdateTenantEvent(
-            tenant.id,
-            result['name'] as String,
-            result['roomId'] as int,
-            result['joinDate'] as DateTime,
+            Tenant(
+              id: tenant.id,
+              name: result['name'] as String,
+              roomId: result['roomId'] as int,
+              joinDate: result['joinDate'] as DateTime,
+            ),
           ),
         );
         if (!mounted) return;
@@ -59,9 +61,11 @@ class _TenantsPageState extends State<TenantsPage> {
       } else {
         bloc.add(
           AddTenant(
-            result['name'] as String,
-            result['roomId'] as int,
-            result['joinDate'] as DateTime,
+            Tenant(
+              name: result['name'] as String,
+              roomId: result['roomId'] as int,
+              joinDate: result['joinDate'] as DateTime,
+            ),
           ),
         );
         if (!mounted) return;
@@ -92,7 +96,7 @@ class _TenantsPageState extends State<TenantsPage> {
       successMessage: 'Tenant deleted',
       failureMessage: 'Failed to delete tenant',
       onConfirmed: () async {
-        context.read<TenantBloc>().add(DeleteTenant(tenant.id));
+        context.read<TenantBloc>().add(DeleteTenant(tenant.id!));
       },
     );
   }

@@ -6,7 +6,6 @@ import 'package:rental_management_system_flutter/models/tenant.dart';
 import 'package:rental_management_system_flutter/services/reading_service.dart';
 import 'package:rental_management_system_flutter/utils/custom_dropdown_form.dart';
 import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
-import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
 
 class ReadingFormDialog extends StatefulWidget {
   final Reading? reading;
@@ -14,7 +13,6 @@ class ReadingFormDialog extends StatefulWidget {
   final List<Tenant> tenants;
   final List<Reading> readings;
   final ReadingService readingService;
-  final void Function(Reading) onSubmit;
   final int? selectedRoomId;
   final int? selectedTenantId;
 
@@ -25,7 +23,6 @@ class ReadingFormDialog extends StatefulWidget {
     required this.tenants,
     required this.readings,
     required this.readingService,
-    required this.onSubmit,
     required this.selectedRoomId,
     required this.selectedTenantId,
   });
@@ -75,7 +72,7 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
         widget.readings
             .where((r) => r.roomId == roomId && r.tenantId == tenantId)
             .toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          ..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
     return filtered.isNotEmpty ? filtered.first : null;
   }
 
@@ -123,7 +120,11 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
         child: const Text('Cancel'),
       ),
       ElevatedButton(
-        onPressed: _submitForm,
+        onPressed: _submit,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).primaryColor,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        ),
         child: Text(widget.reading == null ? 'Add' : 'Save'),
       ),
     ];
@@ -250,50 +251,15 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
     );
   }
 
-  void _submitForm() async {
-    if (!(_formKey.currentState?.validate() ?? false)) {
-      return;
-    }
-
+  void _submit() async {
+    if (_formKey.currentState?.validate() != true) return;
     final prev = int.tryParse(prevController.text);
     final curr = int.tryParse(currController.text);
-
-    if (_selectedRoomId == null ||
-        _selectedTenantId == null ||
-        prev == null ||
-        curr == null) {
-      if (!mounted) return;
-      CustomSnackbar.show(
-        context,
-        'Invalid input. Please check your entries.',
-        type: SnackBarType.error,
-      );
-      return;
-    }
-
-    try {
-      final reading =
-          widget.reading == null
-              ? await widget.readingService.createReading(
-                roomId: _selectedRoomId!,
-                tenantId: _selectedTenantId!,
-                prevReading: prev,
-                currReading: curr,
-              )
-              : await widget.readingService.updateReading(
-                id: widget.reading!.id,
-                roomId: _selectedRoomId!,
-                tenantId: _selectedTenantId!,
-                prevReading: prev,
-                currReading: curr,
-              );
-
-      if (!mounted) return;
-      widget.onSubmit(reading);
-      Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-      CustomSnackbar.show(context, 'Error: $e', type: SnackBarType.error);
-    }
+    Navigator.of(context).pop({
+      'roomId': _selectedRoomId,
+      'tenantId': _selectedTenantId,
+      'prevReading': prev,
+      'currReading': curr,
+    });
   }
 }

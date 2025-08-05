@@ -45,7 +45,7 @@ class _RoomsPageState extends State<RoomsPage> {
             Room(
               id: room.id,
               name: result['name'] as String,
-              rent: result['rent'] as double,
+              rent: result['rent'] as int,
             ),
           ),
         );
@@ -56,7 +56,11 @@ class _RoomsPageState extends State<RoomsPage> {
           type: SnackBarType.success,
         );
       } else {
-        bloc.add(AddRoom(result['name'] as String, result['rent'] as double));
+        bloc.add(
+          AddRoom(
+            Room(name: result['name'] as String, rent: result['rent'] as int),
+          ),
+        );
         if (!mounted) return;
         CustomSnackbar.show(
           context,
@@ -86,7 +90,7 @@ class _RoomsPageState extends State<RoomsPage> {
       successMessage: 'Room deleted successfully',
       failureMessage: 'Failed to delete room',
       onConfirmed: () async {
-        context.read<RoomBloc>().add(DeleteRoom(room.id));
+        context.read<RoomBloc>().add(DeleteRoom(room.id!));
       },
     );
   }

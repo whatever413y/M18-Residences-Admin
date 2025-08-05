@@ -33,9 +33,9 @@ class TenantBloc extends Bloc<TenantEvent, TenantState> {
   Future<void> _onAddTenant(AddTenant event, Emitter<TenantState> emit) async {
     try {
       await tenantService.createTenant(
-        event.name,
-        event.roomId,
-        event.joinDate,
+        event.tenant.name,
+        event.tenant.roomId,
+        event.tenant.joinDate,
       );
       add(LoadTenants());
     } catch (e) {
@@ -49,10 +49,10 @@ class TenantBloc extends Bloc<TenantEvent, TenantState> {
   ) async {
     try {
       await tenantService.updateTenant(
-        event.id,
-        event.name,
-        event.roomId,
-        event.joinDate,
+        event.tenant.id!,
+        event.tenant.name,
+        event.tenant.roomId,
+        event.tenant.joinDate,
       );
       add(LoadTenants());
     } catch (e) {

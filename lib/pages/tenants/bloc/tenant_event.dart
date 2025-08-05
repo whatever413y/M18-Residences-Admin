@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:rental_management_system_flutter/models/tenant.dart';
 
 abstract class TenantEvent extends Equatable {
   @override
@@ -8,26 +9,21 @@ abstract class TenantEvent extends Equatable {
 class LoadTenants extends TenantEvent {}
 
 class AddTenant extends TenantEvent {
-  final String name;
-  final int roomId;
-  final DateTime joinDate;
+  final Tenant tenant;
 
-  AddTenant(this.name, this.roomId, this.joinDate);
+  AddTenant(this.tenant);
 
   @override
-  List<Object?> get props => [name, roomId, joinDate];
+  List<Object?> get props => [tenant];
 }
 
 class UpdateTenantEvent extends TenantEvent {
-  final int id;
-  final String name;
-  final int roomId;
-  final DateTime joinDate;
+  final Tenant tenant;
 
-  UpdateTenantEvent(this.id, this.name, this.roomId, this.joinDate);
+  UpdateTenantEvent(this.tenant);
 
   @override
-  List<Object?> get props => [id, name, roomId, joinDate];
+  List<Object?> get props => [tenant];
 }
 
 class DeleteTenant extends TenantEvent {

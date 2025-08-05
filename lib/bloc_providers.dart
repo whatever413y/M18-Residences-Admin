@@ -1,8 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rental_management_system_flutter/pages/reading/bloc/reading_bloc.dart';
+import 'package:rental_management_system_flutter/pages/reading/bloc/reading_event.dart';
 import 'package:rental_management_system_flutter/pages/room/bloc/room_bloc.dart';
 import 'package:rental_management_system_flutter/pages/room/bloc/room_event.dart';
 import 'package:rental_management_system_flutter/pages/tenants/bloc/tenant_bloc.dart';
 import 'package:rental_management_system_flutter/pages/tenants/bloc/tenant_event.dart';
+import 'package:rental_management_system_flutter/services/reading_service.dart';
 import 'package:rental_management_system_flutter/services/room_service.dart';
 import 'package:rental_management_system_flutter/services/tenant_service.dart';
 
@@ -16,5 +19,13 @@ final List<BlocProvider> blocProviders = [
           tenantService: TenantService(),
           roomService: RoomService(),
         )..add(LoadTenants()),
+  ),
+  BlocProvider<ReadingBloc>(
+    create:
+        (_) => ReadingBloc(
+          readingService: ReadingService(),
+          roomService: RoomService(),
+          tenantService: TenantService(),
+        )..add(LoadReadings()),
   ),
 ];

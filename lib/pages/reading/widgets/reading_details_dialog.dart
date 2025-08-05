@@ -93,7 +93,7 @@ class ReadingDetailsDialog extends StatelessWidget {
         const SizedBox(height: 12),
         _buildDetailRow('Consumption', '${reading.consumption} kWh'),
         const SizedBox(height: 12),
-        _buildDetailRow('Date', dateFormat.format(reading.createdAt)),
+        _buildDetailRow('Date', dateFormat.format(reading.createdAt!)),
       ],
     );
   }

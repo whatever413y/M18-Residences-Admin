@@ -85,7 +85,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
         widget.readings
             .where((r) => r.roomId == roomId && r.tenantId == tenantId)
             .toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          ..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
 
     return readings.isNotEmpty ? readings.first : null;
   }
@@ -144,7 +144,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       final bill =
           widget.bill == null
               ? await widget.billingService.createBill(
-                readingId: reading.id,
+                readingId: reading.id!,
                 tenantId: _selectedTenantId!,
                 roomCharges: int.tryParse(_roomChargesController.text) ?? 0,
                 electricCharges:
@@ -155,7 +155,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
               )
               : await widget.billingService.updateBill(
                 id: widget.bill!.id,
-                readingId: reading.id,
+                readingId: reading.id!,
                 tenantId: _selectedTenantId!,
                 roomCharges: int.tryParse(_roomChargesController.text) ?? 0,
                 electricCharges:

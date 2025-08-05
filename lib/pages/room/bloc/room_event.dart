@@ -9,13 +9,12 @@ abstract class RoomEvent extends Equatable {
 class LoadRooms extends RoomEvent {}
 
 class AddRoom extends RoomEvent {
-  final String name;
-  final double rent;
+  final Room room;
 
-  AddRoom(this.name, this.rent);
+  AddRoom(this.room);
 
   @override
-  List<Object?> get props => [name, rent];
+  List<Object?> get props => [room];
 }
 
 class UpdateRoom extends RoomEvent {

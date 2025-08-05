@@ -25,7 +25,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
 
   Future<void> _onAddRoom(AddRoom event, Emitter<RoomState> emit) async {
     try {
-      await roomService.createRoom(event.name, event.rent);
+      await roomService.createRoom(event.room.name, event.room.rent);
       add(LoadRooms());
     } catch (e) {
       emit(RoomError('Failed to create room'));
@@ -35,7 +35,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
   Future<void> _onUpdateRoom(UpdateRoom event, Emitter<RoomState> emit) async {
     try {
       await roomService.updateRoom(
-        event.room.id,
+        event.room.id!,
         event.room.name,
         event.room.rent,
       );

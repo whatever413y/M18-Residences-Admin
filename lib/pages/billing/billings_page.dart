@@ -112,7 +112,7 @@ class BillingsPageState extends State<BillingsPage> {
         readings
             .where((r) => r.roomId == roomId && r.tenantId == tenantId)
             .toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          ..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
     return filtered.isNotEmpty ? filtered.first : null;
   }
 

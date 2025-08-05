@@ -1,22 +1,20 @@
 class Reading {
-  final int id;
+  final int? id;
   final int tenantId;
   final int roomId;
   final int prevReading;
   final int currReading;
-  final int consumption;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final int? consumption;
+  final DateTime? createdAt;
 
   Reading({
-    required this.id,
+    this.id,
     required this.tenantId,
     required this.roomId,
     required this.prevReading,
     required this.currReading,
-    required this.consumption,
-    required this.createdAt,
-    required this.updatedAt,
+    this.consumption,
+    this.createdAt,
   });
 
   factory Reading.fromJson(Map<String, dynamic> json) {
@@ -28,7 +26,6 @@ class Reading {
       currReading: json['currReading'],
       consumption: json['consumption'],
       createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
     );
   }
 

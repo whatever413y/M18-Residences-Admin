@@ -16,7 +16,7 @@ class RoomService {
     }
   }
 
-  Future<Room> createRoom(String name, double rent) async {
+  Future<Room> createRoom(String name, int rent) async {
     final response = await http.post(
       Uri.parse(baseUrl),
       headers: {'Content-Type': 'application/json'},
@@ -30,7 +30,7 @@ class RoomService {
     }
   }
 
-  Future<Room> updateRoom(int id, String name, double rent) async {
+  Future<Room> updateRoom(int id, String name, int rent) async {
     final response = await http.put(
       Uri.parse('$baseUrl/$id'),
       headers: {'Content-Type': 'application/json'},
