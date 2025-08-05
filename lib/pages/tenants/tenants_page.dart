@@ -175,6 +175,7 @@ class _TenantsPageState extends State<TenantsPage> {
             onDelete: () async {
               await showConfirmationAction(
                 context: context,
+                messenger: ScaffoldMessenger.of(context),
                 confirmTitle: 'Confirm Deletion',
                 confirmContent: 'Are you sure you want to delete this tenant?',
                 loadingMessage: 'Deleting...',

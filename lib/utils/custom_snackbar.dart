@@ -24,7 +24,7 @@ class CustomSnackbar {
     ScaffoldMessengerState messenger,
     String message, {
     SnackBarType type = SnackBarType.info,
-    Duration duration = const Duration(seconds: 3),
+    Duration duration = const Duration(seconds: 2),
     bool dismissPrevious = true,
   }) {
     final snackBar = _buildSnackBar(messenger.context, message, type, duration);

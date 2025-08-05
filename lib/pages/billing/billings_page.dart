@@ -403,6 +403,7 @@ class BillingsPageState extends State<BillingsPage> {
                           onPressed: () async {
                             await showConfirmationAction(
                               context: context,
+                              messenger: ScaffoldMessenger.of(context),
                               confirmTitle: 'Confirm Deletion',
                               confirmContent:
                                   'Are you sure you want to delete this bill?',

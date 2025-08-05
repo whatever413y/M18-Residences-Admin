@@ -6,6 +6,7 @@ Future<bool> showConfirmationAction({
   required String confirmTitle,
   required String confirmContent,
   required Future<void> Function() onConfirmed,
+  required ScaffoldMessengerState messenger,
   String loadingMessage = 'Processing...',
   String successMessage = 'Success',
   String failureMessage = 'Operation failed',
@@ -30,8 +31,6 @@ Future<bool> showConfirmationAction({
   );
 
   if (confirmed != true) return false;
-
-  final messenger = ScaffoldMessenger.of(context);
 
   try {
     CustomSnackbar.showWithMessenger(
