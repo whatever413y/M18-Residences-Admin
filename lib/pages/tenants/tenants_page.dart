@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
@@ -41,17 +43,14 @@ class _TenantsPageState extends State<TenantsPage> {
     );
 
     try {
+      final newTenant = Tenant(
+        id: tenant?.id,
+        name: result['name'] as String,
+        roomId: result['roomId'] as int,
+        joinDate: result['joinDate'] as DateTime,
+      );
       if (tenant != null) {
-        bloc.add(
-          UpdateTenantEvent(
-            Tenant(
-              id: tenant.id,
-              name: result['name'] as String,
-              roomId: result['roomId'] as int,
-              joinDate: result['joinDate'] as DateTime,
-            ),
-          ),
-        );
+        bloc.add(UpdateTenantEvent(newTenant));
         if (!mounted) return;
         CustomSnackbar.show(
           context,
@@ -59,15 +58,7 @@ class _TenantsPageState extends State<TenantsPage> {
           type: SnackBarType.success,
         );
       } else {
-        bloc.add(
-          AddTenant(
-            Tenant(
-              name: result['name'] as String,
-              roomId: result['roomId'] as int,
-              joinDate: result['joinDate'] as DateTime,
-            ),
-          ),
-        );
+        bloc.add(AddTenant(newTenant));
         if (!mounted) return;
         CustomSnackbar.show(
           context,
@@ -96,9 +87,17 @@ class _TenantsPageState extends State<TenantsPage> {
       successMessage: 'Tenant deleted',
       failureMessage: 'Failed to delete tenant',
       onConfirmed: () async {
-        context.read<TenantBloc>().add(DeleteTenant(tenant.id!));
+        await _deleteTenant(tenant.id!);
       },
     );
+  }
+
+  Future<void> _deleteTenant(int id) async {
+    final completer = Completer<void>();
+
+    context.read<TenantBloc>().add(DeleteTenant(id, onComplete: completer));
+
+    return completer.future;
   }
 
   @override
@@ -109,19 +108,31 @@ class _TenantsPageState extends State<TenantsPage> {
       data: theme,
       child: Scaffold(
         appBar: const CustomAppBar(title: 'Tenants'),
-        body: BlocConsumer<TenantBloc, TenantState>(
-          listener: (context, state) {
-            if (state is TenantError) {
-              CustomSnackbar.show(
-                context,
-                state.message,
-                type: SnackBarType.error,
-              );
-            }
-          },
+        body: BlocBuilder<TenantBloc, TenantState>(
           builder: (context, state) {
             if (state is TenantLoading || state is TenantInitial) {
               return const Center(child: CircularProgressIndicator());
+            } else if (state is TenantError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      state.message,
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        context.read<TenantBloc>().add(LoadTenants());
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Refresh'),
+                    ),
+                  ],
+                ),
+              );
             } else if (state is TenantLoaded) {
               final tenants = state.tenants;
               final rooms = state.rooms;
@@ -172,6 +183,7 @@ class _TenantsPageState extends State<TenantsPage> {
             return const SizedBox();
           },
         ),
+
         floatingActionButton: CustomAddButton(
           onPressed: () {
             final state = context.read<TenantBloc>().state;

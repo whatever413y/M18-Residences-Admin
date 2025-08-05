@@ -47,10 +47,12 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
 
   Future<void> _onDeleteRoom(DeleteRoom event, Emitter<RoomState> emit) async {
     try {
-      await roomService.deleteRoom(event.roomId);
+      await roomService.deleteRoom(event.id);
+      event.onComplete.complete();
       add(LoadRooms());
     } catch (e) {
-      emit(RoomError('Failed to delete room'));
+      event.onComplete.completeError(e);
+      emit(RoomError('Failed to delete room: $e'));
     }
   }
 }

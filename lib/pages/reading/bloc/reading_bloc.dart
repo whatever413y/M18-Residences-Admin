@@ -77,9 +77,11 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
   ) async {
     try {
       await readingService.deleteReading(event.id);
+      event.onComplete.complete();
       add(LoadReadings());
     } catch (e) {
-      emit(ReadingError('Failed to delete reading'));
+      event.onComplete.completeError(e);
+      emit(ReadingError('Failed to delete reading: $e'));
     }
   }
 }

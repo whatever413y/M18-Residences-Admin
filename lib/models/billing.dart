@@ -1,26 +1,24 @@
 class Bill {
-  final int id;
+  final int? id;
   final int tenantId;
   final int readingId;
   final int roomCharges;
   final int electricCharges;
   final int? additionalCharges;
   final String? additionalDescription;
-  final int totalAmount;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final int? totalAmount;
+  final DateTime? createdAt;
 
   Bill({
-    required this.id,
+    this.id,
     required this.tenantId,
     required this.readingId,
     required this.roomCharges,
     required this.electricCharges,
     this.additionalCharges,
     this.additionalDescription,
-    required this.totalAmount,
-    required this.createdAt,
-    required this.updatedAt,
+    this.totalAmount,
+    this.createdAt,
   });
 
   factory Bill.fromJson(Map<String, dynamic> json) {
@@ -34,7 +32,6 @@ class Bill {
       additionalDescription: json['additionalDescription'],
       totalAmount: json['totalAmount'],
       createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
     );
   }
 
@@ -46,7 +43,6 @@ class Bill {
       'electricCharges': electricCharges,
       'additionalCharges': additionalCharges,
       'additionalDescription': additionalDescription,
-      'totalAmount': totalAmount,
     };
   }
 }

@@ -15,7 +15,6 @@ class BillingFormDialog extends StatefulWidget {
   final List<Tenant> tenants;
   final List<Reading> readings;
   final BillingService billingService;
-  final void Function(Bill) onSubmit;
   final int? selectedRoomId;
   final int? selectedTenantId;
 
@@ -26,7 +25,6 @@ class BillingFormDialog extends StatefulWidget {
     required this.tenants,
     required this.readings,
     required this.billingService,
-    required this.onSubmit,
     required this.selectedRoomId,
     required this.selectedTenantId,
   });
@@ -113,20 +111,8 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     _electricChargesController.text = electricCharges.toString();
   }
 
-  void _submitForm() async {
-    if (!(_formKey.currentState?.validate() ?? false)) {
-      return;
-    }
-    if (_selectedRoomId == null || _selectedTenantId == null) {
-      if (context.mounted) {
-        CustomSnackbar.show(
-          context,
-          'Please select room and tenant',
-          type: SnackBarType.error,
-        );
-      }
-      return;
-    }
+  void _submit() async {
+    if (_formKey.currentState?.validate() != true) return;
 
     final reading = _getLatestReading(_selectedRoomId, _selectedTenantId);
     if (reading == null) {
@@ -140,38 +126,14 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       return;
     }
 
-    try {
-      final bill =
-          widget.bill == null
-              ? await widget.billingService.createBill(
-                readingId: reading.id!,
-                tenantId: _selectedTenantId!,
-                roomCharges: int.tryParse(_roomChargesController.text) ?? 0,
-                electricCharges:
-                    int.tryParse(_electricChargesController.text) ?? 0,
-                additionalCharges:
-                    int.tryParse(_additionalChargesController.text) ?? 0,
-                additionalDescription: _additionalDescController.text,
-              )
-              : await widget.billingService.updateBill(
-                id: widget.bill!.id,
-                readingId: reading.id!,
-                tenantId: _selectedTenantId!,
-                roomCharges: int.tryParse(_roomChargesController.text) ?? 0,
-                electricCharges:
-                    int.tryParse(_electricChargesController.text) ?? 0,
-                additionalCharges:
-                    int.tryParse(_additionalChargesController.text) ?? 0,
-                additionalDescription: _additionalDescController.text,
-              );
-
-      if (!mounted) return;
-      widget.onSubmit(bill);
-      Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-      CustomSnackbar.show(context, 'Error: $e', type: SnackBarType.error);
-    }
+    Navigator.of(context).pop({
+      'readingId': reading.id,
+      'tenantId': _selectedTenantId,
+      'roomCharges': int.tryParse(_roomChargesController.text) ?? 0,
+      'electricCharges': int.tryParse(_electricChargesController.text) ?? 0,
+      'additionalCharges': int.tryParse(_additionalChargesController.text) ?? 0,
+      'additionalDescription': _additionalDescController.text,
+    });
   }
 
   @override
@@ -212,7 +174,11 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
         child: const Text('Cancel'),
       ),
       ElevatedButton(
-        onPressed: _submitForm,
+        onPressed: _submit,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).primaryColor,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        ),
         child: Text(widget.bill == null ? 'Generate Bill' : 'Update Bill'),
       ),
     ];

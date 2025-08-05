@@ -51,7 +51,7 @@ Future<bool> showConfirmationAction({
   } catch (e) {
     CustomSnackbar.showWithMessenger(
       messenger,
-      failureMessage,
+      '$failureMessage: ${e.toString()}',
       type: SnackBarType.error,
     );
     return false;

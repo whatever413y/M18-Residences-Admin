@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -63,8 +65,12 @@ class ReadingsPageState extends State<ReadingsPage> {
   String _getTenantName(List<Tenant> tenants, int id) =>
       _findTenantById(tenants, id)?.name ?? 'Unknown Tenant';
 
-  void _deleteReading(int id) {
-    context.read<ReadingBloc>().add(DeleteReading(id));
+  Future<void> _deleteReading(int id) async {
+    final completer = Completer<void>();
+
+    context.read<ReadingBloc>().add(DeleteReading(id, onComplete: completer));
+
+    return completer.future;
   }
 
   Future<void> _showReadingDialog({Reading? reading}) async {
@@ -100,18 +106,17 @@ class ReadingsPageState extends State<ReadingsPage> {
     );
 
     try {
+      final newReading =
+          reading ??
+          Reading(
+            id: reading?.id,
+            roomId: result['roomId'] as int,
+            tenantId: result['tenantId'] as int,
+            currReading: result['currReading'] as int,
+            prevReading: result['prevReading'] as int,
+          );
       if (reading != null) {
-        bloc.add(
-          UpdateReading(
-            Reading(
-              id: reading.id,
-              roomId: result['roomId'] as int,
-              tenantId: result['tenantId'] as int,
-              currReading: result['currReading'] as int,
-              prevReading: result['prevReading'] as int,
-            ),
-          ),
-        );
+        bloc.add(UpdateReading(newReading));
         if (!mounted) return;
         CustomSnackbar.show(
           context,
@@ -119,16 +124,7 @@ class ReadingsPageState extends State<ReadingsPage> {
           type: SnackBarType.success,
         );
       } else {
-        bloc.add(
-          AddReading(
-            Reading(
-              roomId: result['roomId'] as int,
-              tenantId: result['tenantId'] as int,
-              currReading: result['currReading'] as int,
-              prevReading: result['prevReading'] as int,
-            ),
-          ),
-        );
+        bloc.add(AddReading(newReading));
         if (!mounted) return;
         CustomSnackbar.show(
           context,
@@ -181,7 +177,26 @@ class ReadingsPageState extends State<ReadingsPage> {
             }
 
             if (state is ReadingError) {
-              return Center(child: Text(state.message));
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      state.message,
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        context.read<ReadingBloc>().add(LoadReadings());
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Refresh'),
+                    ),
+                  ],
+                ),
+              );
             }
 
             if (state is ReadingLoaded) {
@@ -383,7 +398,7 @@ class ReadingsPageState extends State<ReadingsPage> {
                               successMessage: 'Reading deleted',
                               failureMessage: 'Failed to delete reading',
                               onConfirmed: () async {
-                                _deleteReading(reading.id!);
+                                await _deleteReading(reading.id!);
                               },
                             );
                           },

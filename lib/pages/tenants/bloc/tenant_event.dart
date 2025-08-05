@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
 
@@ -28,9 +30,7 @@ class UpdateTenantEvent extends TenantEvent {
 
 class DeleteTenant extends TenantEvent {
   final int id;
+  final Completer<void> onComplete;
 
-  DeleteTenant(this.id);
-
-  @override
-  List<Object?> get props => [id];
+  DeleteTenant(this.id, {required this.onComplete});
 }

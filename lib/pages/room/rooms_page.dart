@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
@@ -39,16 +41,13 @@ class _RoomsPageState extends State<RoomsPage> {
     );
 
     try {
+      final newRoom = Room(
+        id: room?.id,
+        name: result['name'] as String,
+        rent: result['rent'] as int,
+      );
       if (room != null) {
-        bloc.add(
-          UpdateRoom(
-            Room(
-              id: room.id,
-              name: result['name'] as String,
-              rent: result['rent'] as int,
-            ),
-          ),
-        );
+        bloc.add(UpdateRoom(newRoom));
         if (!mounted) return;
         CustomSnackbar.show(
           context,
@@ -56,11 +55,7 @@ class _RoomsPageState extends State<RoomsPage> {
           type: SnackBarType.success,
         );
       } else {
-        bloc.add(
-          AddRoom(
-            Room(name: result['name'] as String, rent: result['rent'] as int),
-          ),
-        );
+        bloc.add(AddRoom(newRoom));
         if (!mounted) return;
         CustomSnackbar.show(
           context,
@@ -90,9 +85,17 @@ class _RoomsPageState extends State<RoomsPage> {
       successMessage: 'Room deleted successfully',
       failureMessage: 'Failed to delete room',
       onConfirmed: () async {
-        context.read<RoomBloc>().add(DeleteRoom(room.id!));
+        await _deleteRoom(room.id!);
       },
     );
+  }
+
+  Future<void> _deleteRoom(int id) async {
+    final completer = Completer<void>();
+
+    context.read<RoomBloc>().add(DeleteRoom(id, onComplete: completer));
+
+    return completer.future;
   }
 
   @override
@@ -108,7 +111,26 @@ class _RoomsPageState extends State<RoomsPage> {
             if (state is RoomLoading || state is RoomInitial) {
               return const Center(child: CircularProgressIndicator());
             } else if (state is RoomError) {
-              return Center(child: Text(state.message));
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      state.message,
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        context.read<RoomBloc>().add(LoadRooms());
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Refresh'),
+                    ),
+                  ],
+                ),
+              );
             } else if (state is RoomLoaded) {
               final rooms = state.rooms;
 

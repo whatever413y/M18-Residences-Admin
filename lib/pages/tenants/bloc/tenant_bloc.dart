@@ -66,9 +66,11 @@ class TenantBloc extends Bloc<TenantEvent, TenantState> {
   ) async {
     try {
       await tenantService.deleteTenant(event.id);
+      event.onComplete.complete();
       add(LoadTenants());
     } catch (e) {
-      emit(TenantError('Failed to delete tenant'));
+      event.onComplete.completeError(e);
+      emit(TenantError('Failed to delete tenant: $e'));
     }
   }
 }

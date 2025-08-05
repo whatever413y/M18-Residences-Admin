@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:rental_management_system_flutter/models/reading.dart';
 
 abstract class ReadingEvent {}
@@ -18,6 +20,7 @@ class UpdateReading extends ReadingEvent {
 
 class DeleteReading extends ReadingEvent {
   final int id;
+  final Completer<void> onComplete;
 
-  DeleteReading(this.id);
+  DeleteReading(this.id, {required this.onComplete});
 }

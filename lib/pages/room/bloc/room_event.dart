@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
 
@@ -27,10 +29,8 @@ class UpdateRoom extends RoomEvent {
 }
 
 class DeleteRoom extends RoomEvent {
-  final int roomId;
+  final int id;
+  final Completer<void> onComplete;
 
-  DeleteRoom(this.roomId);
-
-  @override
-  List<Object?> get props => [roomId];
+  DeleteRoom(this.id, {required this.onComplete});
 }
