@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
+import 'package:rental_management_system_flutter/pages/tenants/bloc/tenant_bloc.dart';
+import 'package:rental_management_system_flutter/pages/tenants/bloc/tenant_event.dart';
+import 'package:rental_management_system_flutter/pages/tenants/bloc/tenant_state.dart';
 import 'package:rental_management_system_flutter/pages/tenants/widgets/tenant_card.dart';
 import 'package:rental_management_system_flutter/pages/tenants/widgets/tenant_form_dialog.dart';
-import 'package:rental_management_system_flutter/services/room_service.dart';
-import 'package:rental_management_system_flutter/services/tenant_service.dart';
 import 'package:rental_management_system_flutter/theme.dart';
 import 'package:rental_management_system_flutter/utils/confirmation_action.dart';
 import 'package:rental_management_system_flutter/utils/custom_add_button.dart';
@@ -17,178 +19,165 @@ class TenantsPage extends StatefulWidget {
 }
 
 class _TenantsPageState extends State<TenantsPage> {
-  final TenantService _tenantService = TenantService();
-  final RoomService _roomService = RoomService();
+  Future<void> _showTenantDialog({
+    Tenant? tenant,
+    required List<Room> rooms,
+  }) async {
+    final result = await showDialog<Map<String, dynamic>?>(
+      context: context,
+      builder: (_) => TenantFormDialog(tenant: tenant, rooms: rooms),
+    );
 
-  List<Tenant> _tenants = [];
-  List<Room> _rooms = [];
+    if (!mounted) return;
 
-  bool _isLoading = false;
+    if (result == null) return;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
+    final bloc = context.read<TenantBloc>();
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    CustomSnackbar.show(
+      context,
+      tenant != null ? 'Updating...' : 'Creating...',
+      type: SnackBarType.loading,
+    );
+
     try {
-      final tenants = await _tenantService.fetchTenants();
-      final rooms = await _roomService.fetchRooms();
-      if (!mounted) return;
-      setState(() {
-        _tenants = tenants;
-        _rooms = rooms;
-      });
-    } catch (e) {
-      debugPrint('Error loading data: $e');
-      if (mounted) {
+      if (tenant != null) {
+        bloc.add(
+          UpdateTenantEvent(
+            tenant.id,
+            result['name'] as String,
+            result['roomId'] as int,
+            result['joinDate'] as DateTime,
+          ),
+        );
+        if (!mounted) return;
         CustomSnackbar.show(
           context,
-          'Failed to load data',
-          type: SnackBarType.error,
+          'Tenant updated',
+          type: SnackBarType.success,
+        );
+      } else {
+        bloc.add(
+          AddTenant(
+            result['name'] as String,
+            result['roomId'] as int,
+            result['joinDate'] as DateTime,
+          ),
+        );
+        if (!mounted) return;
+        CustomSnackbar.show(
+          context,
+          'Tenant "${result['name']}" added',
+          type: SnackBarType.success,
         );
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    } catch (_) {
+      if (!mounted) return;
+      CustomSnackbar.show(
+        context,
+        'Operation failed',
+        type: SnackBarType.error,
+      );
     }
   }
 
-  void _showTenantDialog({Tenant? tenant}) {
-    showDialog(
+  Future<void> _confirmDelete(Tenant tenant) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await showConfirmationAction(
       context: context,
-      builder:
-          (_) => TenantFormDialog(
-            tenant: tenant,
-            rooms: _rooms,
-            onSubmit: (name, roomId, joinDate) async {
-              try {
-                if (mounted) {
-                  CustomSnackbar.show(
-                    context,
-                    tenant != null ? 'Updating...' : 'Creating...',
-                    type: SnackBarType.loading,
-                    dismissPrevious: true,
-                  );
-                }
-                if (tenant != null) {
-                  await _tenantService.updateTenant(
-                    tenant.id,
-                    name,
-                    roomId,
-                    joinDate,
-                  );
-                  if (mounted) {
-                    CustomSnackbar.show(
-                      context,
-                      'Tenant updated',
-                      type: SnackBarType.success,
-                    );
-                  }
-                } else {
-                  await _tenantService.createTenant(name, roomId, joinDate);
-                  if (mounted) {
-                    CustomSnackbar.show(
-                      context,
-                      'Tenant "$name" added',
-                      type: SnackBarType.success,
-                    );
-                  }
-                }
-                await _loadData();
-              } catch (e) {
-                if (mounted) {
-                  CustomSnackbar.show(
-                    context,
-                    'Operation failed',
-                    type: SnackBarType.error,
-                  );
-                }
-              } finally {
-                if (mounted) CustomSnackbar.hide(context);
-              }
-            },
-          ),
+      messenger: messenger,
+      confirmTitle: 'Confirm Deletion',
+      confirmContent: 'Are you sure you want to delete this tenant?',
+      loadingMessage: 'Deleting...',
+      successMessage: 'Tenant deleted',
+      failureMessage: 'Failed to delete tenant',
+      onConfirmed: () async {
+        context.read<TenantBloc>().add(DeleteTenant(tenant.id));
+      },
     );
-  }
-
-  Future<void> _deleteTenant(int id) async {
-    await _tenantService.deleteTenant(id);
-    if (!mounted) return;
-    await _loadData();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.lightTheme;
+
     return Theme(
       data: theme,
       child: Scaffold(
         appBar: const CustomAppBar(title: 'Tenants'),
-        body:
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : LayoutBuilder(
-                  builder: (context, constraints) {
-                    final double maxWidth =
-                        constraints.maxWidth > 600 ? 600 : constraints.maxWidth;
-                    return Center(
-                      child: Container(
-                        width: maxWidth,
-                        padding: const EdgeInsets.all(16),
-                        child:
-                            _tenants.isEmpty
-                                ? _buildNoTenantsMessage()
-                                : _buildTenantList(),
+        body: BlocConsumer<TenantBloc, TenantState>(
+          listener: (context, state) {
+            if (state is TenantError) {
+              CustomSnackbar.show(
+                context,
+                state.message,
+                type: SnackBarType.error,
+              );
+            }
+          },
+          builder: (context, state) {
+            if (state is TenantLoading || state is TenantInitial) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is TenantLoaded) {
+              final tenants = state.tenants;
+              final rooms = state.rooms;
+
+              if (tenants.isEmpty) {
+                return const Center(child: Text('No tenants available.'));
+              }
+
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth = MediaQuery.of(context).size.width * 0.6;
+
+                  return Center(
+                    child: Container(
+                      width: maxWidth,
+                      padding: const EdgeInsets.all(16),
+                      child: ListView.builder(
+                        itemCount: tenants.length,
+                        itemBuilder: (context, index) {
+                          final tenant = tenants[index];
+                          final room = rooms.firstWhere(
+                            (r) => r.id == tenant.roomId,
+                            orElse:
+                                () => Room(id: -1, name: 'Unknown', rent: 0),
+                          );
+
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: TenantCard(
+                              tenant: tenant,
+                              room: room,
+                              onEdit:
+                                  () => _showTenantDialog(
+                                    tenant: tenant,
+                                    rooms: rooms,
+                                  ),
+                              onDelete: () => _confirmDelete(tenant),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
+              );
+            }
+
+            return const SizedBox();
+          },
+        ),
         floatingActionButton: CustomAddButton(
-          onPressed: () => _showTenantDialog(),
+          onPressed: () {
+            final state = context.read<TenantBloc>().state;
+            if (state is TenantLoaded) {
+              _showTenantDialog(rooms: state.rooms);
+            }
+          },
           label: 'New Tenant',
         ),
       ),
-    );
-  }
-
-  Widget _buildNoTenantsMessage() {
-    return const Center(child: Text('No tenants available.'));
-  }
-
-  Widget _buildTenantList() {
-    return ListView.builder(
-      itemCount: _tenants.length,
-      itemBuilder: (context, index) {
-        final tenant = _tenants[index];
-        final room = _rooms.firstWhere(
-          (r) => r.id == tenant.roomId,
-          orElse: () => Room(id: -1, name: 'Unknown', rent: 0),
-        );
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: TenantCard(
-            tenant: tenant,
-            room: room,
-            onEdit: () => _showTenantDialog(tenant: tenant),
-            onDelete: () async {
-              await showConfirmationAction(
-                context: context,
-                messenger: ScaffoldMessenger.of(context),
-                confirmTitle: 'Confirm Deletion',
-                confirmContent: 'Are you sure you want to delete this tenant?',
-                loadingMessage: 'Deleting...',
-                successMessage: 'Tenant deleted',
-                failureMessage: 'Failed to delete tenant',
-                onConfirmed: () async {
-                  await _deleteTenant(tenant.id);
-                },
-              );
-            },
-          ),
-        );
-      },
     );
   }
 }

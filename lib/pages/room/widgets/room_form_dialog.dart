@@ -21,8 +21,18 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
     super.initState();
     _nameController = TextEditingController(text: widget.room?.name ?? '');
     _rentController = TextEditingController(
-      text: widget.room?.rent.toString() ?? '',
+      text: widget.room != null ? widget.room!.rent.toString() : '',
     );
+  }
+
+  void _submit() {
+    if (_formKey.currentState?.validate() ?? false) {
+      final data = {
+        'name': _nameController.text.trim(),
+        'rent': double.parse(_rentController.text.trim()),
+      };
+      Navigator.of(context).pop(data);
+    }
   }
 
   @override
@@ -32,83 +42,90 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
     super.dispose();
   }
 
-  void _submit() {
-    if (_formKey.currentState?.validate() != true) return;
-
-    final name = _nameController.text.trim();
-    final rent = double.parse(_rentController.text.trim());
-
-    Navigator.of(context).pop({'name': name, 'rent': rent});
-  }
-
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.room != null;
 
     return AlertDialog(
       title: Text(isEditing ? 'Edit Room' : 'Add New Room'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CustomTextFormField(
-              controller: _nameController,
-              labelText: 'Room Name',
-              textInputAction: TextInputAction.next,
-              validator:
-                  (val) =>
-                      (val == null || val.trim().isEmpty)
-                          ? 'Enter room name'
-                          : null,
-              prefixIcon: Icon(
-                Icons.meeting_room,
-                color: Theme.of(context).primaryColor,
-              ),
-            ),
-            const SizedBox(height: 12),
-            CustomTextFormField(
-              controller: _rentController,
-              labelText: 'Rent',
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.done,
-              validator: (val) {
-                final parsed = double.tryParse(val ?? '');
-                if (parsed == null || parsed < 0) {
-                  return 'Enter a valid rent amount';
-                }
-                return null;
-              },
-              prefixIcon: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Text(
-                  '₱',
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              onFieldSubmitted: (_) => _submit(),
-            ),
-          ],
+      content: _buildContent(),
+      actions: _buildActions(),
+    );
+  }
+
+  Widget _buildContent() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildNameField(),
+          const SizedBox(height: 12),
+          _buildRentField(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNameField() {
+    return CustomTextFormField(
+      controller: _nameController,
+      labelText: 'Room Name',
+      textInputAction: TextInputAction.next,
+      validator:
+          (val) =>
+              (val == null || val.trim().isEmpty) ? 'Enter room name' : null,
+      prefixIcon: Icon(
+        Icons.meeting_room,
+        color: Theme.of(context).primaryColor,
+      ),
+    );
+  }
+
+  Widget _buildRentField() {
+    return CustomTextFormField(
+      controller: _rentController,
+      labelText: 'Rent',
+      keyboardType: TextInputType.number,
+      textInputAction: TextInputAction.done,
+      validator: (val) {
+        final parsed = double.tryParse(val ?? '');
+        if (parsed == null || parsed < 0) {
+          return 'Enter a valid rent amount';
+        }
+        return null;
+      },
+      prefixIcon: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Text(
+          '₱',
+          style: TextStyle(
+            color: Theme.of(context).primaryColor,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(null),
-          child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-        ),
-        ElevatedButton(
-          onPressed: _submit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).primaryColor,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          ),
-          child: Text(isEditing ? 'Save' : 'Add'),
-        ),
-      ],
+      onFieldSubmitted: (_) => _submit(),
     );
+  }
+
+  List<Widget> _buildActions() {
+    final isEditing = widget.room != null;
+
+    return [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(null),
+        child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+      ),
+      ElevatedButton(
+        onPressed: _submit,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).primaryColor,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        ),
+        child: Text(isEditing ? 'Save' : 'Add'),
+      ),
+    ];
   }
 }

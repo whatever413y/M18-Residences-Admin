@@ -8,14 +8,8 @@ import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
 class TenantFormDialog extends StatefulWidget {
   final Tenant? tenant;
   final List<Room> rooms;
-  final Function(String name, int roomId, DateTime joinDate) onSubmit;
 
-  const TenantFormDialog({
-    super.key,
-    this.tenant,
-    required this.rooms,
-    required this.onSubmit,
-  });
+  const TenantFormDialog({super.key, this.tenant, required this.rooms});
 
   @override
   State<TenantFormDialog> createState() => _TenantFormDialogState();
@@ -40,6 +34,17 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
   void dispose() {
     _nameController.dispose();
     super.dispose();
+  }
+
+  void _submit() {
+    if (_formKey.currentState?.validate() != true) return;
+    final name = _nameController.text.trim();
+    final roomId = int.parse(_selectedRoomId!);
+    final joinDate = _selectedJoinDate!;
+
+    Navigator.of(
+      context,
+    ).pop({'name': name, 'roomId': roomId, 'joinDate': joinDate});
   }
 
   @override
@@ -160,17 +165,6 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
     );
   }
 
-  void _submitForm() {
-    if (_formKey.currentState?.validate() ?? false) {
-      final name = _nameController.text.trim();
-      final roomId = int.parse(_selectedRoomId!);
-      final joinDate = _selectedJoinDate!;
-
-      widget.onSubmit(name, roomId, joinDate);
-      Navigator.pop(context);
-    }
-  }
-
   List<Widget> _buildActions(BuildContext context, bool isEditing) {
     return [
       TextButton(
@@ -178,7 +172,7 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
         child: const Text('Cancel'),
       ),
       ElevatedButton(
-        onPressed: _submitForm,
+        onPressed: _submit,
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).primaryColor,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
