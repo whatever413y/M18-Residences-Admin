@@ -35,6 +35,7 @@ class ReadingFormDialog extends StatefulWidget {
 }
 
 class _ReadingFormDialogState extends State<ReadingFormDialog> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController prevController = TextEditingController();
   final TextEditingController currController = TextEditingController();
   late int? _selectedRoomId;
@@ -92,31 +93,40 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.reading == null ? 'Add New Reading' : 'Edit Reading'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildRoomDropdown(),
-            const SizedBox(height: 12),
-            _buildTenantDropdown(),
-            const SizedBox(height: 12),
-            _buildPrevReadingField(),
-            const SizedBox(height: 12),
-            _buildCurrReadingField(),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _onSubmit,
-          child: Text(widget.reading == null ? 'Add' : 'Save'),
-        ),
-      ],
+      content: _buildContent(),
+      actions: _buildActions(context, widget.reading != null),
     );
+  }
+
+  Widget _buildContent() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildRoomDropdown(),
+          const SizedBox(height: 12),
+          _buildTenantDropdown(),
+          const SizedBox(height: 12),
+          _buildPrevReadingField(),
+          const SizedBox(height: 12),
+          _buildCurrReadingField(),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildActions(BuildContext context, bool isEditing) {
+    return [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Cancel'),
+      ),
+      ElevatedButton(
+        onPressed: _submitForm,
+        child: Text(widget.reading == null ? 'Add' : 'Save'),
+      ),
+    ];
   }
 
   Widget _buildRoomDropdown() {
@@ -186,6 +196,7 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
           _updatePreviousReading();
         });
       },
+      validator: (value) => value == null ? 'Please choose a tenant' : null,
     );
   }
 
@@ -215,9 +226,13 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
       keyboardType: TextInputType.number,
       textInputAction: TextInputAction.done,
       validator: (value) {
-        final parsed = double.tryParse(value ?? '');
+        final parsed = int.tryParse(value ?? '');
+        final prev = int.tryParse(prevController.text);
         if (parsed == null || parsed < 0) {
-          return 'Enter a valid rent amount';
+          return 'Enter a valid reading';
+        }
+        if (prev != null && parsed < prev) {
+          return 'Current must be ≥ previous';
         }
         return null;
       },
@@ -235,22 +250,24 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
     );
   }
 
-  void _onSubmit() async {
+  void _submitForm() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
     final prev = int.tryParse(prevController.text);
     final curr = int.tryParse(currController.text);
 
     if (_selectedRoomId == null ||
         _selectedTenantId == null ||
         prev == null ||
-        curr == null ||
-        curr < prev) {
-      if (context.mounted) {
-        CustomSnackbar.show(
-          context,
-          'Invalid input: current must be ≥ previous.',
-          type: SnackBarType.error,
-        );
-      }
+        curr == null) {
+      if (!mounted) return;
+      CustomSnackbar.show(
+        context,
+        'Invalid input. Please check your entries.',
+        type: SnackBarType.error,
+      );
       return;
     }
 
@@ -271,14 +288,12 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
                 currReading: curr,
               );
 
-      if (context.mounted) {
-        widget.onSubmit(reading);
-        Navigator.pop(context);
-      }
+      if (!mounted) return;
+      widget.onSubmit(reading);
+      Navigator.pop(context);
     } catch (e) {
-      if (context.mounted) {
-        CustomSnackbar.show(context, 'Error: $e', type: SnackBarType.error);
-      }
+      if (!mounted) return;
+      CustomSnackbar.show(context, 'Error: $e', type: SnackBarType.error);
     }
   }
 }

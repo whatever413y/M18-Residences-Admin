@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
-import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
+import 'package:rental_management_system_flutter/utils/custom_dropdown_form.dart';
+import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
 
 class TenantFormDialog extends StatefulWidget {
   final Tenant? tenant;
@@ -21,6 +22,7 @@ class TenantFormDialog extends StatefulWidget {
 }
 
 class _TenantFormDialogState extends State<TenantFormDialog> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   String? _selectedRoomId;
   DateTime? _selectedJoinDate;
@@ -35,24 +37,35 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
   }
 
   @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isEditing = widget.tenant != null;
 
     return AlertDialog(
       title: _buildTitle(isEditing),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildNameField(),
-            const SizedBox(height: 12),
-            _buildRoomDropdown(),
-            const SizedBox(height: 12),
-            _buildJoinDatePicker(context),
-          ],
-        ),
-      ),
+      content: _buildContent(),
       actions: _buildActions(context, isEditing),
+    );
+  }
+
+  Widget _buildContent() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildNameField(),
+          const SizedBox(height: 12),
+          _buildRoomDropdown(),
+          const SizedBox(height: 12),
+          _buildJoinDatePicker(context),
+        ],
+      ),
     );
   }
 
@@ -61,14 +74,20 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
   }
 
   Widget _buildNameField() {
-    return TextField(
+    return CustomTextFormField(
       controller: _nameController,
-      decoration: const InputDecoration(labelText: 'Tenant Name'),
+      labelText: 'Tenant',
+      textInputAction: TextInputAction.next,
+      validator:
+          (value) =>
+              (value == null || value.trim().isEmpty) ? 'Enter tenant' : null,
+      prefixIcon: Icon(Icons.person, color: Theme.of(context).primaryColor),
     );
   }
 
   Widget _buildRoomDropdown() {
-    return DropdownButtonFormField<String>(
+    return CustomDropdownForm<String>(
+      label: 'Room',
       value: _selectedRoomId,
       items:
           widget.rooms
@@ -80,37 +99,76 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
               )
               .toList(),
       onChanged: (value) => setState(() => _selectedRoomId = value),
-      decoration: const InputDecoration(labelText: 'Room'),
+      validator:
+          (value) =>
+              value == null || value.isEmpty ? 'Please select a room' : null,
     );
   }
 
   Widget _buildJoinDatePicker(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            _selectedJoinDate == null
-                ? 'Select Join Date'
-                : 'Joined: ${_dateFormat.format(_selectedJoinDate!)}',
-          ),
-        ),
-        TextButton(
-          onPressed: () async {
-            final now = DateTime.now();
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: _selectedJoinDate ?? now,
-              firstDate: DateTime(2000),
-              lastDate: DateTime(now.year + 5),
-            );
-            if (picked != null) {
-              setState(() => _selectedJoinDate = picked);
-            }
-          },
-          child: const Text('Pick Date'),
-        ),
-      ],
+    return FormField<DateTime>(
+      validator:
+          (value) =>
+              _selectedJoinDate == null ? 'Please pick a join date' : null,
+      builder: (formFieldState) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _selectedJoinDate == null
+                        ? 'Select Join Date'
+                        : 'Joined: ${_dateFormat.format(_selectedJoinDate!)}',
+                  ),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final now = DateTime.now();
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedJoinDate ?? now,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(now.year + 5),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedJoinDate = picked;
+                        formFieldState.didChange(picked);
+                      });
+                    }
+                  },
+                  child: const Text('Pick Date'),
+                ),
+              ],
+            ),
+            if (formFieldState.hasError)
+              Padding(
+                padding: const EdgeInsets.only(top: 6, left: 10),
+                child: Text(
+                  formFieldState.errorText!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
+  }
+
+  void _submitForm() {
+    if (_formKey.currentState?.validate() ?? false) {
+      final name = _nameController.text.trim();
+      final roomId = int.parse(_selectedRoomId!);
+      final joinDate = _selectedJoinDate!;
+
+      widget.onSubmit(name, roomId, joinDate);
+      Navigator.pop(context);
+    }
   }
 
   List<Widget> _buildActions(BuildContext context, bool isEditing) {
@@ -120,23 +178,11 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
         child: const Text('Cancel'),
       ),
       ElevatedButton(
-        onPressed: () {
-          final name = _nameController.text.trim();
-          final roomId = _selectedRoomId;
-          final joinDate = _selectedJoinDate;
-
-          if (name.isEmpty || roomId == null || joinDate == null) {
-            CustomSnackbar.show(
-              context,
-              'Please fill all fields',
-              type: SnackBarType.error,
-            );
-            return;
-          }
-
-          widget.onSubmit(name, int.parse(roomId), joinDate);
-          Navigator.pop(context);
-        },
+        onPressed: _submitForm,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).primaryColor,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        ),
         child: Text(isEditing ? 'Save' : 'Add'),
       ),
     ];

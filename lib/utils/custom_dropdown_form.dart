@@ -6,6 +6,7 @@ class CustomDropdownForm<T> extends StatelessWidget {
   final List<DropdownMenuItem<T>> items;
   final T? value;
   final void Function(T?) onChanged;
+  final String? Function(T?)? validator;
 
   const CustomDropdownForm({
     super.key,
@@ -14,6 +15,7 @@ class CustomDropdownForm<T> extends StatelessWidget {
     required this.items,
     required this.value,
     required this.onChanged,
+    this.validator,
   });
 
   @override
@@ -22,7 +24,7 @@ class CustomDropdownForm<T> extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 14,
@@ -31,6 +33,7 @@ class CustomDropdownForm<T> extends StatelessWidget {
       value: value,
       items: items,
       onChanged: onChanged,
+      validator: validator,
     );
   }
 }

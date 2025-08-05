@@ -26,6 +26,13 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
     }
   }
 
+  @override
+  void dispose() {
+    _roomNameController.dispose();
+    _rentController.dispose();
+    super.dispose();
+  }
+
   void _submitForm() {
     if (_formKey.currentState?.validate() ?? false) {
       final name = _roomNameController.text.trim();

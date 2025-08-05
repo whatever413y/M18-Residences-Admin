@@ -36,6 +36,7 @@ class BillingFormDialog extends StatefulWidget {
 }
 
 class _BillingFormDialogState extends State<BillingFormDialog> {
+  final _formKey = GlobalKey<FormState>();
   final _roomChargesController = TextEditingController();
   final _electricChargesController = TextEditingController();
   final _additionalChargesController = TextEditingController();
@@ -112,7 +113,10 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     _electricChargesController.text = electricCharges.toString();
   }
 
-  Future<void> _onSubmit() async {
+  void _submitForm() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
     if (_selectedRoomId == null || _selectedTenantId == null) {
       if (context.mounted) {
         CustomSnackbar.show(
@@ -161,14 +165,12 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
                 additionalDescription: _additionalDescController.text,
               );
 
-      if (context.mounted) {
-        widget.onSubmit(bill);
-        Navigator.pop(context);
-      }
+      if (!mounted) return;
+      widget.onSubmit(bill);
+      Navigator.pop(context);
     } catch (e) {
-      if (context.mounted) {
-        CustomSnackbar.show(context, 'Error: $e', type: SnackBarType.error);
-      }
+      if (!mounted) return;
+      CustomSnackbar.show(context, 'Error: $e', type: SnackBarType.error);
     }
   }
 
@@ -176,35 +178,44 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.bill == null ? 'Generate Bill' : 'Update Bill'),
-      content: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildRoomDropdown(),
-            const SizedBox(height: 16),
-            _buildTenantDropdown(),
-            const SizedBox(height: 16),
-            _buildRoomChargesField(),
-            const SizedBox(height: 16),
-            _buildElectricChargesField(),
-            const SizedBox(height: 16),
-            _buildAdditionalChargesField(),
-            const SizedBox(height: 16),
-            _buildAdditionalDescField(),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _onSubmit,
-          child: Text(widget.bill == null ? 'Generate Bill' : 'Update Bill'),
-        ),
-      ],
+      content: _buildContent(),
+      actions: _buildActions(context, widget.bill != null),
     );
+  }
+
+  Widget _buildContent() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildRoomDropdown(),
+          const SizedBox(height: 16),
+          _buildTenantDropdown(),
+          const SizedBox(height: 16),
+          _buildRoomChargesField(),
+          const SizedBox(height: 16),
+          _buildElectricChargesField(),
+          const SizedBox(height: 16),
+          _buildAdditionalChargesField(),
+          const SizedBox(height: 16),
+          _buildAdditionalDescField(),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildActions(BuildContext context, bool isEditing) {
+    return [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Cancel'),
+      ),
+      ElevatedButton(
+        onPressed: _submitForm,
+        child: Text(widget.bill == null ? 'Generate Bill' : 'Update Bill'),
+      ),
+    ];
   }
 
   Widget _buildRoomDropdown() {
@@ -274,6 +285,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
           _updateCharges();
         });
       },
+      validator: (value) => value == null ? 'Please choose a tenant' : null,
     );
   }
 
@@ -331,6 +343,15 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
           ),
         ),
       ),
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) return null;
+
+        final parsed = int.tryParse(value);
+        if (parsed == null || parsed < 0) {
+          return 'Enter a valid number';
+        }
+        return null;
+      },
     );
   }
 
@@ -340,6 +361,12 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       labelText: 'Additional Description',
       keyboardType: TextInputType.text,
       prefixIcon: const Icon(Icons.description),
+      validator: (value) {
+        if (value != null && value.trim().isNotEmpty && value.length > 200) {
+          return 'Description too long';
+        }
+        return null;
+      },
     );
   }
 }
