@@ -1,181 +1,153 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
+import 'package:rental_management_system_flutter/pages/room/bloc/room_bloc.dart';
+import 'package:rental_management_system_flutter/pages/room/bloc/room_event.dart';
+import 'package:rental_management_system_flutter/pages/room/bloc/room_state.dart';
 import 'package:rental_management_system_flutter/pages/room/widgets/room_card.dart';
 import 'package:rental_management_system_flutter/pages/room/widgets/room_form_dialog.dart';
+import 'package:rental_management_system_flutter/theme.dart';
 import 'package:rental_management_system_flutter/utils/confirmation_action.dart';
 import 'package:rental_management_system_flutter/utils/custom_add_button.dart';
 import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
 import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
-import '../../services/room_service.dart';
-import 'package:rental_management_system_flutter/theme.dart';
 
 class RoomsPage extends StatefulWidget {
+  const RoomsPage({super.key});
+
   @override
   State<RoomsPage> createState() => _RoomsPageState();
 }
 
 class _RoomsPageState extends State<RoomsPage> {
-  final RoomService _roomService = RoomService();
-  List<Room> _rooms = [];
-  bool _isLoading = false;
+  Future<void> _showRoomDialog({Room? room}) async {
+    final result = await showDialog<Map<String, dynamic>?>(
+      context: context,
+      builder: (_) => RoomFormDialog(room: room),
+    );
 
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
+    if (!mounted) return;
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    if (result == null) return;
+
+    final bloc = context.read<RoomBloc>();
+
+    CustomSnackbar.show(
+      context,
+      room != null ? 'Updating...' : 'Creating...',
+      type: SnackBarType.loading,
+    );
+
     try {
-      final rooms = await _roomService.fetchRooms();
-      if (!mounted) return;
-      setState(() => _rooms = rooms);
-    } catch (e) {
-      debugPrint('Error loading data: $e');
-      if (mounted) {
+      if (room != null) {
+        bloc.add(
+          UpdateRoom(
+            Room(
+              id: room.id,
+              name: result['name'] as String,
+              rent: result['rent'] as double,
+            ),
+          ),
+        );
+        if (!mounted) return;
         CustomSnackbar.show(
           context,
-          'Failed to load data',
-          type: SnackBarType.error,
+          'Room updated',
+          type: SnackBarType.success,
+        );
+      } else {
+        bloc.add(AddRoom(result['name'] as String, result['rent'] as double));
+        if (!mounted) return;
+        CustomSnackbar.show(
+          context,
+          'Room "${result['name']}" added',
+          type: SnackBarType.success,
         );
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    } catch (_) {
+      if (!mounted) return;
+      CustomSnackbar.show(
+        context,
+        'Operation failed',
+        type: SnackBarType.error,
+      );
     }
   }
 
-  void _showRoomDialog({Room? room}) {
-    showDialog(
+  Future<void> _confirmDelete(Room room) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    await showConfirmationAction(
       context: context,
-      builder:
-          (_) => RoomFormDialog(
-            room: room,
-            onSubmit: (name, rent) async {
-              try {
-                if (mounted) {
-                  CustomSnackbar.show(
-                    context,
-                    room != null ? 'Updating...' : 'Creating...',
-                    type: SnackBarType.loading,
-                    dismissPrevious: true,
-                  );
-                }
-
-                if (room != null) {
-                  await _roomService.updateRoom(room.id, name, rent);
-                  if (mounted) {
-                    CustomSnackbar.show(
-                      context,
-                      'Room updated',
-                      type: SnackBarType.success,
-                    );
-                  }
-                } else {
-                  await _roomService.createRoom(name, rent);
-                  if (mounted) {
-                    CustomSnackbar.show(
-                      context,
-                      'Room "$name" added',
-                      type: SnackBarType.success,
-                    );
-                  }
-                }
-                await _loadData();
-              } catch (_) {
-                if (mounted) {
-                  CustomSnackbar.show(
-                    context,
-                    'Operation failed',
-                    type: SnackBarType.error,
-                  );
-                }
-              } finally {
-                if (mounted) CustomSnackbar.hide(context);
-              }
-            },
-          ),
+      messenger: messenger,
+      confirmTitle: 'Confirm Deletion',
+      confirmContent: 'Are you sure you want to delete this room?',
+      loadingMessage: 'Deleting room...',
+      successMessage: 'Room deleted successfully',
+      failureMessage: 'Failed to delete room',
+      onConfirmed: () async {
+        context.read<RoomBloc>().add(DeleteRoom(room.id));
+      },
     );
-  }
-
-  Future<void> _deleteRoom(int id) async {
-    await _roomService.deleteRoom(id);
-    if (!mounted) return;
-    await _loadData();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.lightTheme;
+
     return Theme(
       data: theme,
       child: Scaffold(
         appBar: const CustomAppBar(title: 'Rooms'),
-        body: RefreshIndicator(
-          onRefresh: _loadData,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              double maxWidth =
-                  constraints.maxWidth > 600 ? 600 : constraints.maxWidth;
+        body: BlocBuilder<RoomBloc, RoomState>(
+          builder: (context, state) {
+            if (state is RoomLoading || state is RoomInitial) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is RoomError) {
+              return Center(child: Text(state.message));
+            } else if (state is RoomLoaded) {
+              final rooms = state.rooms;
 
-              return Center(
-                child: Container(
-                  width: maxWidth,
-                  padding: const EdgeInsets.all(16),
-                  child:
-                      _isLoading
-                          ? _buildLoading()
-                          : _rooms.isEmpty
-                          ? _buildNoRoomsMessage()
-                          : _buildRoomList(),
-                ),
+              if (rooms.isEmpty) {
+                return const Center(child: Text('No rooms available.'));
+              }
+
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth = MediaQuery.of(context).size.width * 0.6;
+
+                  return Center(
+                    child: Container(
+                      width: maxWidth,
+                      padding: const EdgeInsets.all(16),
+                      child: ListView.builder(
+                        itemCount: rooms.length,
+                        itemBuilder: (context, index) {
+                          final room = rooms[index];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: RoomCard(
+                              room: room,
+                              onEdit: () => _showRoomDialog(room: room),
+                              onDelete: () => _confirmDelete(room),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                },
               );
-            },
-          ),
+            }
+
+            return const SizedBox();
+          },
         ),
         floatingActionButton: CustomAddButton(
           onPressed: () => _showRoomDialog(),
           label: 'New Room',
         ),
       ),
-    );
-  }
-
-  Widget _buildLoading() {
-    return const Center(child: CircularProgressIndicator());
-  }
-
-  Widget _buildNoRoomsMessage() {
-    return const Center(child: Text('No rooms available.'));
-  }
-
-  Widget _buildRoomList() {
-    return ListView.builder(
-      itemCount: _rooms.length,
-      itemBuilder: (context, index) {
-        final room = _rooms[index];
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: RoomCard(
-            room: room,
-            onEdit: () => _showRoomDialog(room: room),
-            onDelete: () async {
-              await showConfirmationAction(
-                context: context,
-                messenger: ScaffoldMessenger.of(context),
-                confirmTitle: 'Confirm Deletion',
-                confirmContent: 'Are you sure you want to delete this room?',
-                loadingMessage: 'Deleting...',
-                successMessage: 'Room deleted',
-                failureMessage: 'Failed to delete room',
-                onConfirmed: () async {
-                  await _deleteRoom(room.id);
-                },
-              );
-            },
-          ),
-        );
-      },
     );
   }
 }

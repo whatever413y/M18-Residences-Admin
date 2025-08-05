@@ -4,9 +4,8 @@ import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
 
 class RoomFormDialog extends StatefulWidget {
   final Room? room;
-  final void Function(String name, double rent) onSubmit;
 
-  const RoomFormDialog({super.key, this.room, required this.onSubmit});
+  const RoomFormDialog({super.key, this.room});
 
   @override
   State<RoomFormDialog> createState() => _RoomFormDialogState();
@@ -14,32 +13,32 @@ class RoomFormDialog extends StatefulWidget {
 
 class _RoomFormDialogState extends State<RoomFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _roomNameController = TextEditingController();
-  final _rentController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _rentController;
 
   @override
   void initState() {
     super.initState();
-    if (widget.room != null) {
-      _roomNameController.text = widget.room!.name;
-      _rentController.text = widget.room!.rent.toString();
-    }
+    _nameController = TextEditingController(text: widget.room?.name ?? '');
+    _rentController = TextEditingController(
+      text: widget.room?.rent.toString() ?? '',
+    );
   }
 
   @override
   void dispose() {
-    _roomNameController.dispose();
+    _nameController.dispose();
     _rentController.dispose();
     super.dispose();
   }
 
-  void _submitForm() {
-    if (_formKey.currentState?.validate() ?? false) {
-      final name = _roomNameController.text.trim();
-      final rent = double.parse(_rentController.text.trim());
-      widget.onSubmit(name, rent);
-      Navigator.of(context).pop(true);
-    }
+  void _submit() {
+    if (_formKey.currentState?.validate() != true) return;
+
+    final name = _nameController.text.trim();
+    final rent = double.parse(_rentController.text.trim());
+
+    Navigator.of(context).pop({'name': name, 'rent': rent});
   }
 
   @override
@@ -48,87 +47,68 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
 
     return AlertDialog(
       title: Text(isEditing ? 'Edit Room' : 'Add New Room'),
-      content: _buildContent(),
-      actions: _buildActions(),
-    );
-  }
-
-  Widget _buildContent() {
-    return Form(
-      key: _formKey,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildRoomNameField(),
-          const SizedBox(height: 12),
-          _buildRentField(),
-        ],
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CustomTextFormField(
+              controller: _nameController,
+              labelText: 'Room Name',
+              textInputAction: TextInputAction.next,
+              validator:
+                  (val) =>
+                      (val == null || val.trim().isEmpty)
+                          ? 'Enter room name'
+                          : null,
+              prefixIcon: Icon(
+                Icons.meeting_room,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            CustomTextFormField(
+              controller: _rentController,
+              labelText: 'Rent',
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.done,
+              validator: (val) {
+                final parsed = double.tryParse(val ?? '');
+                if (parsed == null || parsed < 0) {
+                  return 'Enter a valid rent amount';
+                }
+                return null;
+              },
+              prefixIcon: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Text(
+                  '₱',
+                  style: TextStyle(
+                    color: Theme.of(context).primaryColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              onFieldSubmitted: (_) => _submit(),
+            ),
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildRoomNameField() {
-    return CustomTextFormField(
-      controller: _roomNameController,
-      labelText: 'Room Name',
-      autofocus: true,
-      textInputAction: TextInputAction.next,
-      validator:
-          (value) =>
-              (value == null || value.trim().isEmpty)
-                  ? 'Enter room name'
-                  : null,
-      prefixIcon: Icon(
-        Icons.meeting_room,
-        color: Theme.of(context).primaryColor,
-      ),
-    );
-  }
-
-  Widget _buildRentField() {
-    return CustomTextFormField(
-      controller: _rentController,
-      labelText: 'Rent',
-      keyboardType: TextInputType.number,
-      textInputAction: TextInputAction.done,
-      validator: (value) {
-        final parsed = double.tryParse(value ?? '');
-        if (parsed == null || parsed < 0) {
-          return 'Enter a valid rent amount';
-        }
-        return null;
-      },
-      prefixIcon: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Text(
-          '₱',
-          style: TextStyle(
-            color: Theme.of(context).primaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).primaryColor,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           ),
+          child: Text(isEditing ? 'Save' : 'Add'),
         ),
-      ),
-      onFieldSubmitted: (_) => _submitForm(),
+      ],
     );
-  }
-
-  List<Widget> _buildActions() {
-    final isEditing = widget.room != null;
-
-    return [
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(false),
-        child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-      ),
-      ElevatedButton(
-        onPressed: _submitForm,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        ),
-        child: Text(isEditing ? 'Save' : 'Add'),
-      ),
-    ];
   }
 }

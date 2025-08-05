@@ -3,10 +3,10 @@ import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
 
 Future<bool> showConfirmationAction({
   required BuildContext context,
+  required ScaffoldMessengerState messenger,
   required String confirmTitle,
   required String confirmContent,
   required Future<void> Function() onConfirmed,
-  required ScaffoldMessengerState messenger,
   String loadingMessage = 'Processing...',
   String successMessage = 'Success',
   String failureMessage = 'Operation failed',
@@ -55,7 +55,5 @@ Future<bool> showConfirmationAction({
       type: SnackBarType.error,
     );
     return false;
-  } finally {
-    CustomSnackbar.hideWithMessenger(messenger);
   }
 }
