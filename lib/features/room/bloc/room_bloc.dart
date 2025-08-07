@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rental_management_system_flutter/pages/room/bloc/room_event.dart';
-import 'package:rental_management_system_flutter/pages/room/bloc/room_state.dart';
+import 'package:rental_management_system_flutter/features/room/bloc/room_event.dart';
+import 'package:rental_management_system_flutter/features/room/bloc/room_state.dart';
 import 'package:rental_management_system_flutter/services/room_service.dart';
 
 class RoomBloc extends Bloc<RoomEvent, RoomState> {
@@ -34,11 +34,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
 
   Future<void> _onUpdateRoom(UpdateRoom event, Emitter<RoomState> emit) async {
     try {
-      await roomService.updateRoom(
-        event.room.id!,
-        event.room.name,
-        event.room.rent,
-      );
+      await roomService.updateRoom(event.room.id!, event.room.name, event.room.rent);
       add(LoadRooms());
     } catch (e) {
       emit(RoomError('Failed to update room'));

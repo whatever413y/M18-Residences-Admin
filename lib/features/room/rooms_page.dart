@@ -3,11 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
-import 'package:rental_management_system_flutter/pages/room/bloc/room_bloc.dart';
-import 'package:rental_management_system_flutter/pages/room/bloc/room_event.dart';
-import 'package:rental_management_system_flutter/pages/room/bloc/room_state.dart';
-import 'package:rental_management_system_flutter/pages/room/widgets/room_card.dart';
-import 'package:rental_management_system_flutter/pages/room/widgets/room_form_dialog.dart';
+import 'package:rental_management_system_flutter/features/room/bloc/room_bloc.dart';
+import 'package:rental_management_system_flutter/features/room/bloc/room_event.dart';
+import 'package:rental_management_system_flutter/features/room/bloc/room_state.dart';
+import 'package:rental_management_system_flutter/features/room/widgets/room_card.dart';
+import 'package:rental_management_system_flutter/features/room/widgets/room_form_dialog.dart';
 import 'package:rental_management_system_flutter/theme.dart';
 import 'package:rental_management_system_flutter/utils/confirmation_action.dart';
 import 'package:rental_management_system_flutter/utils/custom_add_button.dart';
@@ -23,10 +23,7 @@ class RoomsPage extends StatefulWidget {
 
 class _RoomsPageState extends State<RoomsPage> {
   Future<void> _showRoomDialog({Room? room}) async {
-    final result = await showDialog<Map<String, dynamic>?>(
-      context: context,
-      builder: (_) => RoomFormDialog(room: room),
-    );
+    final result = await showDialog<Map<String, dynamic>?>(context: context, builder: (_) => RoomFormDialog(room: room));
 
     if (!mounted) return;
 
@@ -34,42 +31,22 @@ class _RoomsPageState extends State<RoomsPage> {
 
     final bloc = context.read<RoomBloc>();
 
-    CustomSnackbar.show(
-      context,
-      room != null ? 'Updating...' : 'Creating...',
-      type: SnackBarType.loading,
-    );
+    CustomSnackbar.show(context, room != null ? 'Updating...' : 'Creating...', type: SnackBarType.loading);
 
     try {
-      final newRoom = Room(
-        id: room?.id,
-        name: result['name'] as String,
-        rent: result['rent'] as int,
-      );
+      final newRoom = Room(id: room?.id, name: result['name'] as String, rent: result['rent'] as int);
       if (room != null) {
         bloc.add(UpdateRoom(newRoom));
         if (!mounted) return;
-        CustomSnackbar.show(
-          context,
-          'Room updated',
-          type: SnackBarType.success,
-        );
+        CustomSnackbar.show(context, 'Room updated', type: SnackBarType.success);
       } else {
         bloc.add(AddRoom(newRoom));
         if (!mounted) return;
-        CustomSnackbar.show(
-          context,
-          'Room "${result['name']}" added',
-          type: SnackBarType.success,
-        );
+        CustomSnackbar.show(context, 'Room "${result['name']}" added', type: SnackBarType.success);
       }
     } catch (_) {
       if (!mounted) return;
-      CustomSnackbar.show(
-        context,
-        'Operation failed',
-        type: SnackBarType.error,
-      );
+      CustomSnackbar.show(context, 'Operation failed', type: SnackBarType.error);
     }
   }
 
@@ -115,11 +92,7 @@ class _RoomsPageState extends State<RoomsPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      state.message,
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
-                    ),
+                    Text(state.message, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: () {
@@ -152,11 +125,7 @@ class _RoomsPageState extends State<RoomsPage> {
                           final room = rooms[index];
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: RoomCard(
-                              room: room,
-                              onEdit: () => _showRoomDialog(room: room),
-                              onDelete: () => _confirmDelete(room),
-                            ),
+                            child: RoomCard(room: room, onEdit: () => _showRoomDialog(room: room), onDelete: () => _confirmDelete(room)),
                           );
                         },
                       ),
@@ -169,10 +138,7 @@ class _RoomsPageState extends State<RoomsPage> {
             return const SizedBox();
           },
         ),
-        floatingActionButton: CustomAddButton(
-          onPressed: () => _showRoomDialog(),
-          label: 'New Room',
-        ),
+        floatingActionButton: CustomAddButton(onPressed: () => _showRoomDialog(), label: 'New Room'),
       ),
     );
   }

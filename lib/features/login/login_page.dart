@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
-import 'package:rental_management_system_flutter/pages/home/home_page.dart';
+import 'package:rental_management_system_flutter/features/home/home_page.dart';
 import 'package:rental_management_system_flutter/theme.dart';
 import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
 

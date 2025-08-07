@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
-import 'package:rental_management_system_flutter/pages/tenants/bloc/tenant_bloc.dart';
-import 'package:rental_management_system_flutter/pages/tenants/bloc/tenant_event.dart';
-import 'package:rental_management_system_flutter/pages/tenants/bloc/tenant_state.dart';
-import 'package:rental_management_system_flutter/pages/tenants/widgets/tenant_card.dart';
-import 'package:rental_management_system_flutter/pages/tenants/widgets/tenant_form_dialog.dart';
+import 'package:rental_management_system_flutter/features/tenants/bloc/tenant_bloc.dart';
+import 'package:rental_management_system_flutter/features/tenants/bloc/tenant_event.dart';
+import 'package:rental_management_system_flutter/features/tenants/bloc/tenant_state.dart';
+import 'package:rental_management_system_flutter/features/tenants/widgets/tenant_card.dart';
+import 'package:rental_management_system_flutter/features/tenants/widgets/tenant_form_dialog.dart';
 import 'package:rental_management_system_flutter/theme.dart';
 import 'package:rental_management_system_flutter/utils/confirmation_action.dart';
 import 'package:rental_management_system_flutter/utils/custom_add_button.dart';
@@ -21,14 +21,8 @@ class TenantsPage extends StatefulWidget {
 }
 
 class _TenantsPageState extends State<TenantsPage> {
-  Future<void> _showTenantDialog({
-    Tenant? tenant,
-    required List<Room> rooms,
-  }) async {
-    final result = await showDialog<Map<String, dynamic>?>(
-      context: context,
-      builder: (_) => TenantFormDialog(tenant: tenant, rooms: rooms),
-    );
+  Future<void> _showTenantDialog({Tenant? tenant, required List<Room> rooms}) async {
+    final result = await showDialog<Map<String, dynamic>?>(context: context, builder: (_) => TenantFormDialog(tenant: tenant, rooms: rooms));
 
     if (!mounted) return;
 
@@ -36,11 +30,7 @@ class _TenantsPageState extends State<TenantsPage> {
 
     final bloc = context.read<TenantBloc>();
 
-    CustomSnackbar.show(
-      context,
-      tenant != null ? 'Updating...' : 'Creating...',
-      type: SnackBarType.loading,
-    );
+    CustomSnackbar.show(context, tenant != null ? 'Updating...' : 'Creating...', type: SnackBarType.loading);
 
     try {
       final newTenant = Tenant(
@@ -52,27 +42,15 @@ class _TenantsPageState extends State<TenantsPage> {
       if (tenant != null) {
         bloc.add(UpdateTenantEvent(newTenant));
         if (!mounted) return;
-        CustomSnackbar.show(
-          context,
-          'Tenant updated',
-          type: SnackBarType.success,
-        );
+        CustomSnackbar.show(context, 'Tenant updated', type: SnackBarType.success);
       } else {
         bloc.add(AddTenant(newTenant));
         if (!mounted) return;
-        CustomSnackbar.show(
-          context,
-          'Tenant "${result['name']}" added',
-          type: SnackBarType.success,
-        );
+        CustomSnackbar.show(context, 'Tenant "${result['name']}" added', type: SnackBarType.success);
       }
     } catch (_) {
       if (!mounted) return;
-      CustomSnackbar.show(
-        context,
-        'Operation failed',
-        type: SnackBarType.error,
-      );
+      CustomSnackbar.show(context, 'Operation failed', type: SnackBarType.error);
     }
   }
 
@@ -117,11 +95,7 @@ class _TenantsPageState extends State<TenantsPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      state.message,
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
-                    ),
+                    Text(state.message, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: () {
@@ -153,22 +127,14 @@ class _TenantsPageState extends State<TenantsPage> {
                         itemCount: tenants.length,
                         itemBuilder: (context, index) {
                           final tenant = tenants[index];
-                          final room = rooms.firstWhere(
-                            (r) => r.id == tenant.roomId,
-                            orElse:
-                                () => Room(id: -1, name: 'Unknown', rent: 0),
-                          );
+                          final room = rooms.firstWhere((r) => r.id == tenant.roomId, orElse: () => Room(id: -1, name: 'Unknown', rent: 0));
 
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8.0),
                             child: TenantCard(
                               tenant: tenant,
                               room: room,
-                              onEdit:
-                                  () => _showTenantDialog(
-                                    tenant: tenant,
-                                    rooms: rooms,
-                                  ),
+                              onEdit: () => _showTenantDialog(tenant: tenant, rooms: rooms),
                               onDelete: () => _confirmDelete(tenant),
                             ),
                           );

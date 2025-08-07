@@ -8,11 +8,11 @@ import 'package:rental_management_system_flutter/models/billing.dart';
 import 'package:rental_management_system_flutter/models/reading.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
-import 'package:rental_management_system_flutter/pages/billing/bloc/billing_bloc.dart';
-import 'package:rental_management_system_flutter/pages/billing/bloc/billing_event.dart';
-import 'package:rental_management_system_flutter/pages/billing/bloc/billing_state.dart';
-import 'package:rental_management_system_flutter/pages/billing/widgets/billing_details_dialog.dart';
-import 'package:rental_management_system_flutter/pages/billing/widgets/billing_form_dialog.dart';
+import 'package:rental_management_system_flutter/features/billing/bloc/billing_bloc.dart';
+import 'package:rental_management_system_flutter/features/billing/bloc/billing_event.dart';
+import 'package:rental_management_system_flutter/features/billing/bloc/billing_state.dart';
+import 'package:rental_management_system_flutter/features/billing/widgets/billing_details_dialog.dart';
+import 'package:rental_management_system_flutter/features/billing/widgets/billing_form_dialog.dart';
 import 'package:rental_management_system_flutter/services/billing_service.dart';
 import 'package:rental_management_system_flutter/theme.dart';
 import 'package:rental_management_system_flutter/utils/confirmation_action.dart';
@@ -32,8 +32,7 @@ class BillingsPageState extends State<BillingsPage> {
   int? _filterTenantId;
   int? _filterYear;
 
-  BillingService get _billingService =>
-      context.read<BillingBloc>().billingService;
+  BillingService get _billingService => context.read<BillingBloc>().billingService;
 
   @override
   void initState() {
@@ -41,45 +40,27 @@ class BillingsPageState extends State<BillingsPage> {
     context.read<BillingBloc>().add(LoadBills());
   }
 
-  List<Bill> _applyFilters(
-    List<Bill> bills,
-    int? filterRoomId,
-    int? filterTenantId,
-    int? filterYear,
-    List<Tenant> tenants,
-  ) {
+  List<Bill> _applyFilters(List<Bill> bills, int? filterRoomId, int? filterTenantId, int? filterYear, List<Tenant> tenants) {
     return bills.where((bill) {
       final tenant = tenants.firstWhereOrNull((t) => t.id == bill.tenantId);
       final matchRoom = filterRoomId == null || tenant?.roomId == filterRoomId;
-      final matchTenant =
-          filterTenantId == null || bill.tenantId == filterTenantId;
-      final matchYear =
-          filterYear == null || bill.createdAt!.year == filterYear;
+      final matchTenant = filterTenantId == null || bill.tenantId == filterTenantId;
+      final matchYear = filterYear == null || bill.createdAt!.year == filterYear;
       return matchRoom && matchTenant && matchYear;
     }).toList();
   }
 
-  Room? _findRoomById(List<Room> rooms, int id) =>
-      rooms.firstWhereOrNull((r) => r.id == id);
+  Room? _findRoomById(List<Room> rooms, int id) => rooms.firstWhereOrNull((r) => r.id == id);
 
-  Tenant? _findTenantById(List<Tenant> tenants, int id) =>
-      tenants.firstWhereOrNull((t) => t.id == id);
+  Tenant? _findTenantById(List<Tenant> tenants, int id) => tenants.firstWhereOrNull((t) => t.id == id);
 
   Reading? _getLatestReading(List<Reading> readings, int roomId, int tenantId) {
     final filtered =
-        readings
-            .where((r) => r.roomId == roomId && r.tenantId == tenantId)
-            .toList()
-          ..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+        readings.where((r) => r.roomId == roomId && r.tenantId == tenantId).toList()..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
     return filtered.isNotEmpty ? filtered.first : null;
   }
 
-  Future<void> _showBillingDialog({
-    Bill? bill,
-    required List<Room> rooms,
-    required List<Tenant> tenants,
-    required List<Reading> readings,
-  }) async {
+  Future<void> _showBillingDialog({Bill? bill, required List<Room> rooms, required List<Tenant> tenants, required List<Reading> readings}) async {
     final bloc = context.read<BillingBloc>();
     final state = bloc.state;
 
@@ -101,11 +82,7 @@ class BillingsPageState extends State<BillingsPage> {
 
     if (!mounted || result == null) return;
 
-    CustomSnackbar.show(
-      context,
-      bill != null ? 'Updating...' : 'Creating...',
-      type: SnackBarType.loading,
-    );
+    CustomSnackbar.show(context, bill != null ? 'Updating...' : 'Creating...', type: SnackBarType.loading);
 
     try {
       final newBill = Bill(
@@ -121,11 +98,7 @@ class BillingsPageState extends State<BillingsPage> {
       if (bill != null) {
         bloc.add(UpdateBill(newBill));
         if (!mounted) return;
-        CustomSnackbar.show(
-          context,
-          'Bill updated',
-          type: SnackBarType.success,
-        );
+        CustomSnackbar.show(context, 'Bill updated', type: SnackBarType.success);
       } else {
         bloc.add(AddBill(newBill));
         if (!mounted) return;
@@ -137,11 +110,7 @@ class BillingsPageState extends State<BillingsPage> {
       }
     } catch (_) {
       if (!mounted) return;
-      CustomSnackbar.show(
-        context,
-        'Operation failed',
-        type: SnackBarType.error,
-      );
+      CustomSnackbar.show(context, 'Operation failed', type: SnackBarType.error);
     }
   }
 
@@ -153,22 +122,11 @@ class BillingsPageState extends State<BillingsPage> {
     return completer.future;
   }
 
-  void _showBillingDetailsDialog(
-    Bill bill,
-    List<Room> rooms,
-    List<Tenant> tenants,
-    List<Reading> readings,
-  ) {
+  void _showBillingDetailsDialog(Bill bill, List<Room> rooms, List<Tenant> tenants, List<Reading> readings) {
     final tenant = _findTenantById(tenants, bill.tenantId);
     final room = tenant != null ? _findRoomById(rooms, tenant.roomId) : null;
 
-    final consumption =
-        _getLatestReading(
-          readings,
-          tenant?.roomId ?? 0,
-          bill.tenantId,
-        )?.consumption.toString() ??
-        '0';
+    final consumption = _getLatestReading(readings, tenant?.roomId ?? 0, bill.tenantId)?.consumption.toString() ?? '0';
 
     final date = _dateFormat.format(bill.createdAt!);
 
@@ -207,11 +165,7 @@ class BillingsPageState extends State<BillingsPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      state.message,
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
-                    ),
+                    Text(state.message, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: () {
@@ -229,22 +183,12 @@ class BillingsPageState extends State<BillingsPage> {
               final rooms = state.rooms;
               final tenants = state.tenants;
               final readings = state.readings;
-              final bills = _applyFilters(
-                state.bills,
-                _filterRoomId,
-                _filterTenantId,
-                _filterYear,
-                tenants,
-              );
+              final bills = _applyFilters(state.bills, _filterRoomId, _filterTenantId, _filterYear, tenants);
 
               return RefreshIndicator(
-                onRefresh:
-                    () async => context.read<BillingBloc>().add(LoadBills()),
+                onRefresh: () async => context.read<BillingBloc>().add(LoadBills()),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: horizontalPadding,
-                    vertical: 16,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
                   child: Column(
                     children: [
                       isNarrow
@@ -280,9 +224,7 @@ class BillingsPageState extends State<BillingsPage> {
                                       DataColumn(label: Text('Room')),
                                       DataColumn(label: Text('Tenant')),
                                       DataColumn(label: Text('Consumption')),
-                                      DataColumn(
-                                        label: Text('Electric Charges'),
-                                      ),
+                                      DataColumn(label: Text('Electric Charges')),
                                       DataColumn(label: Text('Room Charges')),
                                       DataColumn(label: Text('Additional')),
                                       DataColumn(label: Text('Notes')),
@@ -292,129 +234,44 @@ class BillingsPageState extends State<BillingsPage> {
                                     ],
                                     rows:
                                         bills.map((bill) {
-                                          final tenant = _findTenantById(
-                                            tenants,
-                                            bill.tenantId,
-                                          );
-                                          final room =
-                                              tenant != null
-                                                  ? _findRoomById(
-                                                    rooms,
-                                                    tenant.roomId,
-                                                  )
-                                                  : null;
+                                          final tenant = _findTenantById(tenants, bill.tenantId);
+                                          final room = tenant != null ? _findRoomById(rooms, tenant.roomId) : null;
 
                                           return DataRow(
-                                            onSelectChanged:
-                                                (_) =>
-                                                    _showBillingDetailsDialog(
-                                                      bill,
-                                                      rooms,
-                                                      tenants,
-                                                      readings,
-                                                    ),
+                                            onSelectChanged: (_) => _showBillingDetailsDialog(bill, rooms, tenants, readings),
                                             cells: [
                                               DataCell(Text(room?.name ?? '-')),
+                                              DataCell(Text(tenant?.name ?? '-')),
                                               DataCell(
-                                                Text(tenant?.name ?? '-'),
+                                                Text(_getLatestReading(readings, tenant?.roomId ?? 0, bill.tenantId)?.consumption.toString() ?? '0'),
                                               ),
-                                              DataCell(
-                                                Text(
-                                                  _getLatestReading(
-                                                            readings,
-                                                            tenant?.roomId ?? 0,
-                                                            bill.tenantId,
-                                                          )?.consumption
-                                                          .toString() ??
-                                                      '0',
-                                                ),
-                                              ),
-                                              DataCell(
-                                                Text(
-                                                  bill.electricCharges
-                                                      .toString(),
-                                                ),
-                                              ),
-                                              DataCell(
-                                                Text(
-                                                  bill.roomCharges.toString(),
-                                                ),
-                                              ),
-                                              DataCell(
-                                                Text(
-                                                  bill.additionalCharges
-                                                          ?.toString() ??
-                                                      '-',
-                                                ),
-                                              ),
-                                              DataCell(
-                                                Text(
-                                                  bill
-                                                              .additionalDescription
-                                                              ?.isNotEmpty ==
-                                                          true
-                                                      ? bill
-                                                          .additionalDescription!
-                                                      : '-',
-                                                ),
-                                              ),
-                                              DataCell(
-                                                Text(
-                                                  bill.totalAmount.toString(),
-                                                ),
-                                              ),
-                                              DataCell(
-                                                Text(
-                                                  _dateFormat.format(
-                                                    bill.createdAt!,
-                                                  ),
-                                                ),
-                                              ),
+                                              DataCell(Text(bill.electricCharges.toString())),
+                                              DataCell(Text(bill.roomCharges.toString())),
+                                              DataCell(Text(bill.additionalCharges?.toString() ?? '-')),
+                                              DataCell(Text(bill.additionalDescription?.isNotEmpty == true ? bill.additionalDescription! : '-')),
+                                              DataCell(Text(bill.totalAmount.toString())),
+                                              DataCell(Text(_dateFormat.format(bill.createdAt!))),
                                               DataCell(
                                                 Row(
                                                   children: [
                                                     IconButton(
-                                                      icon: const Icon(
-                                                        Icons.edit,
-                                                        color: Colors.blue,
-                                                      ),
+                                                      icon: const Icon(Icons.edit, color: Colors.blue),
                                                       onPressed:
-                                                          () =>
-                                                              _showBillingDialog(
-                                                                bill: bill,
-                                                                rooms: rooms,
-                                                                tenants:
-                                                                    tenants,
-                                                                readings:
-                                                                    readings,
-                                                              ),
+                                                          () => _showBillingDialog(bill: bill, rooms: rooms, tenants: tenants, readings: readings),
                                                     ),
                                                     IconButton(
-                                                      icon: const Icon(
-                                                        Icons.delete,
-                                                        color: Colors.red,
-                                                      ),
+                                                      icon: const Icon(Icons.delete, color: Colors.red),
                                                       onPressed:
                                                           () => showConfirmationAction(
                                                             context: context,
-                                                            messenger:
-                                                                ScaffoldMessenger.of(
-                                                                  context,
-                                                                ),
-                                                            confirmTitle:
-                                                                'Delete Bill',
-                                                            confirmContent:
-                                                                'Are you sure you want to delete this bill?',
-                                                            loadingMessage:
-                                                                'Deleting...',
-                                                            successMessage:
-                                                                'Bill deleted',
-                                                            failureMessage:
-                                                                'Failed to delete bill',
+                                                            messenger: ScaffoldMessenger.of(context),
+                                                            confirmTitle: 'Delete Bill',
+                                                            confirmContent: 'Are you sure you want to delete this bill?',
+                                                            loadingMessage: 'Deleting...',
+                                                            successMessage: 'Bill deleted',
+                                                            failureMessage: 'Failed to delete bill',
                                                             onConfirmed: () async {
-                                                              await _deleteBill(
-                                                                bill.id!,
-                                                              );
+                                                              await _deleteBill(bill.id!);
                                                             },
                                                           ),
                                                     ),
@@ -441,12 +298,7 @@ class BillingsPageState extends State<BillingsPage> {
           onPressed: () {
             final state = context.read<BillingBloc>().state;
             if (state is BillingLoaded) {
-              _showBillingDialog(
-                bill: null,
-                rooms: state.rooms,
-                tenants: state.tenants,
-                readings: state.readings,
-              );
+              _showBillingDialog(bill: null, rooms: state.rooms, tenants: state.tenants, readings: state.readings);
             }
           },
           label: const Text('Generate New Bill'),
@@ -461,9 +313,7 @@ class BillingsPageState extends State<BillingsPage> {
       label: 'Filter by Room',
       items: [
         const DropdownMenuItem(value: null, child: Text('All Rooms')),
-        ...rooms.map(
-          (room) => DropdownMenuItem(value: room.id, child: Text(room.name)),
-        ),
+        ...rooms.map((room) => DropdownMenuItem(value: room.id, child: Text(room.name))),
       ],
       value: _filterRoomId,
       onChanged: (value) {
@@ -472,9 +322,7 @@ class BillingsPageState extends State<BillingsPage> {
           if (_filterRoomId == null) {
             _filterTenantId = null;
           } else if (_filterTenantId != null) {
-            final tenant = tenants.firstWhereOrNull(
-              (t) => t.id == _filterTenantId,
-            );
+            final tenant = tenants.firstWhereOrNull((t) => t.id == _filterTenantId);
             if (tenant == null || tenant.roomId != _filterRoomId) {
               _filterTenantId = null;
             }
@@ -489,15 +337,8 @@ class BillingsPageState extends State<BillingsPage> {
       label: 'Filter by Tenant',
       hint: 'Choose a tenant',
       items: [
-        DropdownMenuItem(
-          value: null,
-          enabled: false,
-          child: Text('Choose a tenant'),
-        ),
-        ...tenants.map(
-          (tenant) =>
-              DropdownMenuItem(value: tenant.id, child: Text(tenant.name)),
-        ),
+        DropdownMenuItem(value: null, enabled: false, child: Text('Choose a tenant')),
+        ...tenants.map((tenant) => DropdownMenuItem(value: tenant.id, child: Text(tenant.name))),
       ],
       value: _filterTenantId,
       onChanged: (value) {
@@ -521,9 +362,7 @@ class BillingsPageState extends State<BillingsPage> {
       label: 'Filter by Year',
       items: [
         const DropdownMenuItem(value: null, child: Text('All Years')),
-        ...years.map(
-          (year) => DropdownMenuItem(value: year, child: Text(year.toString())),
-        ),
+        ...years.map((year) => DropdownMenuItem(value: year, child: Text(year.toString()))),
       ],
       value: _filterYear,
       onChanged: (val) {
