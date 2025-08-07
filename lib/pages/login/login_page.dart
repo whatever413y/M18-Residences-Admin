@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:rental_management_system_flutter/pages/login/widgets/login_card.dart';
-import 'package:rental_management_system_flutter/theme.dart'; // your theme.dart
-import '../home/home_page.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
+import 'package:rental_management_system_flutter/pages/home/home_page.dart';
+import 'package:rental_management_system_flutter/theme.dart';
+import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -13,14 +17,31 @@ class LoginPageState extends State<LoginPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  void _navigateToNextPage() {
+  String? _usernameError;
+  String? _passwordError;
+  bool _obscurePassword = true;
+
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
+  }
+
+  void _submitLogin() {
+    setState(() {
+      _usernameError = null;
+      _passwordError = null;
+    });
+
     if (_formKey.currentState?.validate() ?? false) {
       final username = _usernameController.text.trim();
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => HomePage(inputText: username)),
-      );
+      final password = _passwordController.text.trim();
+      context.read<AuthBloc>().add(LoginWithAccountId(username: username, password: password));
     }
+  }
+
+  void _navigateToHome() {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => HomePage(inputText: _usernameController.text)));
   }
 
   @override
@@ -32,36 +53,108 @@ class LoginPageState extends State<LoginPage> {
     return Theme(
       data: theme,
       child: Scaffold(
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                primaryColor.withValues(alpha: 0.9),
-                primaryColor.withValues(alpha: 0.6),
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+        body: BlocListener<AuthBloc, AuthState>(
+          listener: (context, state) {
+            if (state is AuthError) {
+              setState(() {
+                _usernameError = 'Invalid Credentials';
+                _passwordError = 'Invalid Credentials';
+              });
+              _formKey.currentState?.validate();
+            } else if (state is Authenticated) {
+              _usernameController.clear();
+              _passwordController.clear();
+              _navigateToHome();
+            }
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [primaryColor.withAlpha(230), primaryColor.withAlpha(150)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
             ),
-          ),
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: screenWidth < 600 ? screenWidth : 500,
-                ),
-                child: LoginCard(
-                  formKey: _formKey,
-                  usernameController: _usernameController,
-                  passwordController: _passwordController,
-                  onSubmit: _navigateToNextPage,
-                  color: primaryColor,
-                ),
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: ConstrainedBox(constraints: BoxConstraints(maxWidth: screenWidth < 600 ? screenWidth : 500), child: _buildCard(primaryColor)),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCard(Color primaryColor) {
+    return Card(
+      elevation: 12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Admin Login', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: primaryColor, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              _buildUsernameField(primaryColor),
+              const SizedBox(height: 15),
+              _buildPasswordField(primaryColor),
+              const SizedBox(height: 20),
+              _buildLoginButton(primaryColor),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUsernameField(Color primaryColor) {
+    return CustomTextFormField(
+      controller: _usernameController,
+      labelText: 'Username',
+      prefixIcon: Icon(Icons.person, color: primaryColor),
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return 'Please enter your username';
+        }
+        return _usernameError;
+      },
+    );
+  }
+
+  Widget _buildPasswordField(Color primaryColor) {
+    return CustomTextFormField(
+      controller: _passwordController,
+      labelText: 'Password',
+      prefixIcon: Icon(Icons.lock, color: primaryColor),
+      obscureText: _obscurePassword,
+      suffixIcon: IconButton(
+        icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: primaryColor),
+        onPressed: _togglePasswordVisibility,
+      ),
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return 'Please enter your password';
+        }
+        return _passwordError;
+      },
+    );
+  }
+
+  Widget _buildLoginButton(Color primaryColor) {
+    return ElevatedButton(
+      onPressed: _submitLogin,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: const Text('Login', style: TextStyle(fontSize: 18)),
     );
   }
 }
