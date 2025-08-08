@@ -40,8 +40,8 @@ class LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _navigateToHome() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => HomePage(inputText: _usernameController.text)));
+  void _navigateToPage(Widget page) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
 
   @override
@@ -64,7 +64,7 @@ class LoginPageState extends State<LoginPage> {
             } else if (state is Authenticated) {
               _usernameController.clear();
               _passwordController.clear();
-              _navigateToHome();
+              _navigateToPage(HomePage());
             }
           },
           child: Container(

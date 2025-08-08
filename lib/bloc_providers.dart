@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
 import 'package:rental_management_system_flutter/features/billing/bloc/billing_bloc.dart';
 import 'package:rental_management_system_flutter/features/billing/bloc/billing_event.dart';
 import 'package:rental_management_system_flutter/features/reading/bloc/reading_bloc.dart';
@@ -15,7 +16,7 @@ import 'package:rental_management_system_flutter/services/room_service.dart';
 import 'package:rental_management_system_flutter/services/tenant_service.dart';
 
 final List<BlocProvider> blocProviders = [
-  BlocProvider<AuthBloc>(create: (_) => AuthBloc(authService: AuthService())),
+  BlocProvider<AuthBloc>(create: (_) => AuthBloc(authService: AuthService())..add(CheckAuthStatus())),
   BlocProvider<RoomBloc>(create: (_) => RoomBloc(RoomService())..add(LoadRooms())),
   BlocProvider<TenantBloc>(create: (_) => TenantBloc(tenantService: TenantService(), roomService: RoomService())..add(LoadTenants())),
   BlocProvider<ReadingBloc>(
