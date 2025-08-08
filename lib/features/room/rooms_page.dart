@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/features/room/bloc/room_bloc.dart';
 import 'package:rental_management_system_flutter/features/room/bloc/room_event.dart';
@@ -13,6 +15,7 @@ import 'package:rental_management_system_flutter/utils/confirmation_action.dart'
 import 'package:rental_management_system_flutter/utils/custom_add_button.dart';
 import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
 import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
+import 'package:rental_management_system_flutter/utils/error_widget.dart';
 
 class RoomsPage extends StatefulWidget {
   const RoomsPage({super.key});
@@ -22,6 +25,16 @@ class RoomsPage extends StatefulWidget {
 }
 
 class _RoomsPageState extends State<RoomsPage> {
+  late AuthBloc authBloc;
+  late RoomBloc roomBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    authBloc = context.read<AuthBloc>();
+    roomBloc = context.read<RoomBloc>();
+  }
+
   Future<void> _showRoomDialog({Room? room}) async {
     final result = await showDialog<Map<String, dynamic>?>(context: context, builder: (_) => RoomFormDialog(room: room));
 
@@ -29,18 +42,16 @@ class _RoomsPageState extends State<RoomsPage> {
 
     if (result == null) return;
 
-    final bloc = context.read<RoomBloc>();
-
     CustomSnackbar.show(context, room != null ? 'Updating...' : 'Creating...', type: SnackBarType.loading);
 
     try {
       final newRoom = Room(id: room?.id, name: result['name'] as String, rent: result['rent'] as int);
       if (room != null) {
-        bloc.add(UpdateRoom(newRoom));
+        roomBloc.add(UpdateRoom(newRoom));
         if (!mounted) return;
         CustomSnackbar.show(context, 'Room updated', type: SnackBarType.success);
       } else {
-        bloc.add(AddRoom(newRoom));
+        roomBloc.add(AddRoom(newRoom));
         if (!mounted) return;
         CustomSnackbar.show(context, 'Room "${result['name']}" added', type: SnackBarType.success);
       }
@@ -70,7 +81,7 @@ class _RoomsPageState extends State<RoomsPage> {
   Future<void> _deleteRoom(int id) async {
     final completer = Completer<void>();
 
-    context.read<RoomBloc>().add(DeleteRoom(id, onComplete: completer));
+    roomBloc.add(DeleteRoom(id, onComplete: completer));
 
     return completer.future;
   }
@@ -79,67 +90,66 @@ class _RoomsPageState extends State<RoomsPage> {
   Widget build(BuildContext context) {
     final theme = AppTheme.lightTheme;
 
-    return Theme(
-      data: theme,
-      child: Scaffold(
-        appBar: const CustomAppBar(title: 'Rooms'),
-        body: BlocBuilder<RoomBloc, RoomState>(
-          builder: (context, state) {
-            if (state is RoomLoading || state is RoomInitial) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (state is RoomError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(state.message, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        context.read<RoomBloc>().add(LoadRooms());
-                      },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Refresh'),
-                    ),
-                  ],
-                ),
-              );
-            } else if (state is RoomLoaded) {
-              final rooms = state.rooms;
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        if (authState is Unauthenticated) {
+          return buildErrorWidget(context: context, message: authState.message);
+        }
 
-              if (rooms.isEmpty) {
-                return const Center(child: Text('No rooms available.'));
-              }
-
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxWidth = MediaQuery.of(context).size.width * 0.6;
-
-                  return Center(
-                    child: Container(
-                      width: maxWidth,
-                      padding: const EdgeInsets.all(16),
-                      child: ListView.builder(
-                        itemCount: rooms.length,
-                        itemBuilder: (context, index) {
-                          final room = rooms[index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: RoomCard(room: room, onEdit: () => _showRoomDialog(room: room), onDelete: () => _confirmDelete(room)),
-                          );
-                        },
-                      ),
-                    ),
+        return Theme(
+          data: theme,
+          child: Scaffold(
+            appBar: const CustomAppBar(title: 'Rooms'),
+            body: BlocBuilder<RoomBloc, RoomState>(
+              builder: (context, state) {
+                if (state is RoomLoading || state is RoomInitial) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (state is RoomError) {
+                  return buildErrorWidget(
+                    context: context,
+                    message: state.message,
+                    onRetry: () {
+                      roomBloc.add(LoadRooms());
+                    },
                   );
-                },
-              );
-            }
+                } else if (state is RoomLoaded) {
+                  final rooms = state.rooms;
 
-            return const SizedBox();
-          },
-        ),
-        floatingActionButton: CustomAddButton(onPressed: () => _showRoomDialog(), label: 'New Room'),
-      ),
+                  if (rooms.isEmpty) {
+                    return const Center(child: Text('No rooms available.'));
+                  }
+
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      final maxWidth = MediaQuery.of(context).size.width * 0.6;
+
+                      return Center(
+                        child: Container(
+                          width: maxWidth,
+                          padding: const EdgeInsets.all(16),
+                          child: ListView.builder(
+                            itemCount: rooms.length,
+                            itemBuilder: (context, index) {
+                              final room = rooms[index];
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                child: RoomCard(room: room, onEdit: () => _showRoomDialog(room: room), onDelete: () => _confirmDelete(room)),
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
+
+                return const SizedBox();
+              },
+            ),
+            floatingActionButton: CustomAddButton(onPressed: () => _showRoomDialog(), label: 'New Room'),
+          ),
+        );
+      },
     );
   }
 }
