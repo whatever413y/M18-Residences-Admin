@@ -13,6 +13,12 @@ class BillingInitial extends BillingState {}
 
 class BillingLoading extends BillingState {}
 
+class AddSuccess extends BillingState {}
+
+class UpdateSuccess extends BillingState {}
+
+class DeleteSuccess extends BillingState {}
+
 class BillingLoaded extends BillingState {
   final List<Bill> bills;
   final List<Room> rooms;

@@ -1,9 +1,10 @@
 import 'dart:async';
-
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
 import 'package:rental_management_system_flutter/models/reading.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
@@ -19,6 +20,7 @@ import 'package:rental_management_system_flutter/utils/confirmation_action.dart'
 import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
 import 'package:rental_management_system_flutter/utils/custom_dropdown_form.dart';
 import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
+import 'package:rental_management_system_flutter/utils/error_widget.dart';
 
 class BillingsPage extends StatefulWidget {
   @override
@@ -26,6 +28,8 @@ class BillingsPage extends StatefulWidget {
 }
 
 class BillingsPageState extends State<BillingsPage> {
+  late AuthBloc authBloc;
+  late BillingBloc billingBloc;
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
 
   int? _filterRoomId;
@@ -37,7 +41,8 @@ class BillingsPageState extends State<BillingsPage> {
   @override
   void initState() {
     super.initState();
-    context.read<BillingBloc>().add(LoadBills());
+    billingBloc = context.read<BillingBloc>();
+    billingBloc.add(LoadBills());
   }
 
   List<Bill> _applyFilters(List<Bill> bills, int? filterRoomId, int? filterTenantId, int? filterYear, List<Tenant> tenants) {
@@ -61,9 +66,7 @@ class BillingsPageState extends State<BillingsPage> {
   }
 
   Future<void> _showBillingDialog({Bill? bill, required List<Room> rooms, required List<Tenant> tenants, required List<Reading> readings}) async {
-    final bloc = context.read<BillingBloc>();
-    final state = bloc.state;
-
+    final state = billingBloc.state;
     if (state is! BillingLoaded) return;
 
     final result = await showDialog<Map<String, dynamic>?>(
@@ -84,41 +87,34 @@ class BillingsPageState extends State<BillingsPage> {
 
     CustomSnackbar.show(context, bill != null ? 'Updating...' : 'Creating...', type: SnackBarType.loading);
 
-    try {
-      final newBill = Bill(
-        id: bill?.id,
-        tenantId: result['tenantId'] as int,
-        readingId: result['readingId'] as int,
-        roomCharges: result['roomCharges'] as int,
-        electricCharges: result['electricCharges'] as int,
-        additionalCharges: result['additionalCharges'] as int? ?? 0,
-        additionalDescription: result['additionalDescription'] as String?,
-      );
+    final newBill = Bill(
+      id: bill?.id,
+      tenantId: result['tenantId'] as int,
+      readingId: result['readingId'] as int,
+      roomCharges: result['roomCharges'] as int,
+      electricCharges: result['electricCharges'] as int,
+      additionalCharges: result['additionalCharges'] as int? ?? 0,
+      additionalDescription: result['additionalDescription'] as String?,
+    );
 
-      if (bill != null) {
-        bloc.add(UpdateBill(newBill));
-        if (!mounted) return;
-        CustomSnackbar.show(context, 'Bill updated', type: SnackBarType.success);
-      } else {
-        bloc.add(AddBill(newBill));
-        if (!mounted) return;
-        CustomSnackbar.show(
-          context,
-          'Bill for tenant "${_findTenantById(tenants, newBill.tenantId)?.name ?? 'Tenant'}" added',
-          type: SnackBarType.success,
-        );
-      }
-    } catch (_) {
+    if (bill != null) {
+      billingBloc.add(UpdateBill(newBill));
       if (!mounted) return;
-      CustomSnackbar.show(context, 'Operation failed', type: SnackBarType.error);
+      CustomSnackbar.show(context, 'Bill updated', type: SnackBarType.success);
+    } else {
+      billingBloc.add(AddBill(newBill));
+      if (!mounted) return;
+      CustomSnackbar.show(
+        context,
+        'Bill for tenant "${_findTenantById(tenants, newBill.tenantId)?.name ?? 'Tenant'}" added',
+        type: SnackBarType.success,
+      );
     }
   }
 
   Future<void> _deleteBill(int id) async {
     final completer = Completer<void>();
-
-    context.read<BillingBloc>().add(DeleteBill(id, onComplete: completer));
-
+    billingBloc.add(DeleteBill(id, onComplete: completer));
     return completer.future;
   }
 
@@ -154,149 +150,83 @@ class BillingsPageState extends State<BillingsPage> {
       data: theme,
       child: Scaffold(
         appBar: const CustomAppBar(title: 'Billing'),
-        body: BlocBuilder<BillingBloc, BillingState>(
-          builder: (context, state) {
-            if (state is BillingLoading) {
-              return const Center(child: CircularProgressIndicator());
+        body: BlocBuilder<AuthBloc, AuthState>(
+          buildWhen: (previous, current) => previous.runtimeType != current.runtimeType,
+          builder: (context, authState) {
+            if (authState is Unauthenticated) {
+              return buildErrorWidget(context: context, message: authState.message);
             }
+            return BlocListener<BillingBloc, BillingState>(
+              listener: (context, state) {
+                if (state is BillingError) {
+                  CustomSnackbar.show(context, state.message, type: SnackBarType.error);
+                } else if (state is AddSuccess) {
+                  CustomSnackbar.show(context, 'Bill created', type: SnackBarType.success);
+                } else if (state is UpdateSuccess) {
+                  CustomSnackbar.show(context, 'Bill updated', type: SnackBarType.success);
+                } else if (state is DeleteSuccess) {
+                  CustomSnackbar.show(context, 'Bill deleted', type: SnackBarType.success);
+                }
+              },
+              child: BlocBuilder<BillingBloc, BillingState>(
+                builder: (context, state) {
+                  if (state is BillingLoading || state is BillingInitial) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-            if (state is BillingError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(state.message, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        context.read<BillingBloc>().add(LoadBills());
-                      },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Refresh'),
-                    ),
-                  ],
-                ),
-              );
-            }
+                  if (state is BillingError) {
+                    return buildErrorWidget(context: context, message: state.message, onRetry: () => billingBloc.add(LoadBills()));
+                  }
 
-            if (state is BillingLoaded) {
-              final rooms = state.rooms;
-              final tenants = state.tenants;
-              final readings = state.readings;
-              final bills = _applyFilters(state.bills, _filterRoomId, _filterTenantId, _filterYear, tenants);
+                  if (state is BillingLoaded) {
+                    final rooms = state.rooms;
+                    final tenants = state.tenants;
+                    final readings = state.readings;
+                    final bills = _applyFilters(state.bills, _filterRoomId, _filterTenantId, _filterYear, tenants);
 
-              return RefreshIndicator(
-                onRefresh: () async => context.read<BillingBloc>().add(LoadBills()),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
-                  child: Column(
-                    children: [
-                      isNarrow
-                          ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _buildRoomFilter(rooms, tenants),
-                              const SizedBox(height: 12),
-                              _buildTenantFilter(tenants),
-                              const SizedBox(height: 12),
-                              _buildYearFilter(state.bills),
-                            ],
-                          )
-                          : Row(
-                            children: [
-                              Expanded(child: _buildRoomFilter(rooms, tenants)),
-                              const SizedBox(width: 12),
-                              Expanded(child: _buildTenantFilter(tenants)),
-                              const SizedBox(width: 12),
-                              Expanded(child: _buildYearFilter(state.bills)),
-                            ],
-                          ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child:
-                            bills.isEmpty
-                                ? const Center(child: Text('No bills found'))
-                                : SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: DataTable(
-                                    showCheckboxColumn: false,
-                                    columns: const [
-                                      DataColumn(label: Text('Room')),
-                                      DataColumn(label: Text('Tenant')),
-                                      DataColumn(label: Text('Consumption')),
-                                      DataColumn(label: Text('Electric Charges')),
-                                      DataColumn(label: Text('Room Charges')),
-                                      DataColumn(label: Text('Additional')),
-                                      DataColumn(label: Text('Notes')),
-                                      DataColumn(label: Text('Total')),
-                                      DataColumn(label: Text('Date')),
-                                      DataColumn(label: Text('Actions')),
-                                    ],
-                                    rows:
-                                        bills.map((bill) {
-                                          final tenant = _findTenantById(tenants, bill.tenantId);
-                                          final room = tenant != null ? _findRoomById(rooms, tenant.roomId) : null;
-
-                                          return DataRow(
-                                            onSelectChanged: (_) => _showBillingDetailsDialog(bill, rooms, tenants, readings),
-                                            cells: [
-                                              DataCell(Text(room?.name ?? '-')),
-                                              DataCell(Text(tenant?.name ?? '-')),
-                                              DataCell(
-                                                Text(_getLatestReading(readings, tenant?.roomId ?? 0, bill.tenantId)?.consumption.toString() ?? '0'),
-                                              ),
-                                              DataCell(Text(bill.electricCharges.toString())),
-                                              DataCell(Text(bill.roomCharges.toString())),
-                                              DataCell(Text(bill.additionalCharges?.toString() ?? '-')),
-                                              DataCell(Text(bill.additionalDescription?.isNotEmpty == true ? bill.additionalDescription! : '-')),
-                                              DataCell(Text(bill.totalAmount.toString())),
-                                              DataCell(Text(_dateFormat.format(bill.createdAt!))),
-                                              DataCell(
-                                                Row(
-                                                  children: [
-                                                    IconButton(
-                                                      icon: const Icon(Icons.edit, color: Colors.blue),
-                                                      onPressed:
-                                                          () => _showBillingDialog(bill: bill, rooms: rooms, tenants: tenants, readings: readings),
-                                                    ),
-                                                    IconButton(
-                                                      icon: const Icon(Icons.delete, color: Colors.red),
-                                                      onPressed:
-                                                          () => showConfirmationAction(
-                                                            context: context,
-                                                            messenger: ScaffoldMessenger.of(context),
-                                                            confirmTitle: 'Delete Bill',
-                                                            confirmContent: 'Are you sure you want to delete this bill?',
-                                                            loadingMessage: 'Deleting...',
-                                                            successMessage: 'Bill deleted',
-                                                            failureMessage: 'Failed to delete bill',
-                                                            onConfirmed: () async {
-                                                              await _deleteBill(bill.id!);
-                                                            },
-                                                          ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        }).toList(),
-                                  ),
+                    return RefreshIndicator(
+                      onRefresh: () async => billingBloc.add(LoadBills()),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
+                        child: Column(
+                          children: [
+                            isNarrow
+                                ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    _buildRoomFilter(rooms, tenants),
+                                    const SizedBox(height: 12),
+                                    _buildTenantFilter(tenants),
+                                    const SizedBox(height: 12),
+                                    _buildYearFilter(state.bills),
+                                  ],
+                                )
+                                : Row(
+                                  children: [
+                                    Expanded(child: _buildRoomFilter(rooms, tenants)),
+                                    const SizedBox(width: 12),
+                                    Expanded(child: _buildTenantFilter(tenants)),
+                                    const SizedBox(width: 12),
+                                    Expanded(child: _buildYearFilter(state.bills)),
+                                  ],
                                 ),
+                            const SizedBox(height: 12),
+                            _buildBillingsTable(bills: bills, rooms: rooms, tenants: tenants, readings: readings),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-              );
-            }
+                    );
+                  }
 
-            return const SizedBox(); // fallback
+                  return const SizedBox.shrink();
+                },
+              ),
+            );
           },
         ),
-
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
-            final state = context.read<BillingBloc>().state;
+            final state = billingBloc.state;
             if (state is BillingLoaded) {
               _showBillingDialog(bill: null, rooms: state.rooms, tenants: state.tenants, readings: state.readings);
             }
@@ -370,6 +300,76 @@ class BillingsPageState extends State<BillingsPage> {
           _filterYear = val;
         });
       },
+    );
+  }
+
+  Widget _buildBillingsTable({required List<Bill> bills, required List<Room> rooms, required List<Tenant> tenants, required List<Reading> readings}) {
+    if (bills.isEmpty) {
+      return const Expanded(child: Center(child: Text('No bills found')));
+    }
+
+    return Expanded(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          showCheckboxColumn: false,
+          columns: const [
+            DataColumn(label: Text('Room')),
+            DataColumn(label: Text('Tenant')),
+            DataColumn(label: Text('Consumption')),
+            DataColumn(label: Text('Electric Charges')),
+            DataColumn(label: Text('Room Charges')),
+            DataColumn(label: Text('Additional')),
+            DataColumn(label: Text('Notes')),
+            DataColumn(label: Text('Total')),
+            DataColumn(label: Text('Date')),
+            DataColumn(label: Text('Actions')),
+          ],
+          rows:
+              bills.map((bill) {
+                final tenant = _findTenantById(tenants, bill.tenantId);
+                final room = tenant != null ? _findRoomById(rooms, tenant.roomId) : null;
+
+                return DataRow(
+                  onSelectChanged: (_) => _showBillingDetailsDialog(bill, rooms, tenants, readings),
+                  cells: [
+                    DataCell(Text(room?.name ?? '-')),
+                    DataCell(Text(tenant?.name ?? '-')),
+                    DataCell(Text(_getLatestReading(readings, tenant?.roomId ?? 0, bill.tenantId)?.consumption.toString() ?? '0')),
+                    DataCell(Text(bill.electricCharges.toString())),
+                    DataCell(Text(bill.roomCharges.toString())),
+                    DataCell(Text(bill.additionalCharges?.toString() ?? '-')),
+                    DataCell(Text(bill.additionalDescription?.isNotEmpty == true ? bill.additionalDescription! : '-')),
+                    DataCell(Text(bill.totalAmount.toString())),
+                    DataCell(Text(_dateFormat.format(bill.createdAt!))),
+                    DataCell(
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.blue),
+                            onPressed: () => _showBillingDialog(bill: bill, rooms: rooms, tenants: tenants, readings: readings),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed:
+                                () => showConfirmationAction(
+                                  context: context,
+                                  messenger: ScaffoldMessenger.of(context),
+                                  confirmTitle: 'Delete Bill',
+                                  confirmContent: 'Are you sure you want to delete this bill?',
+                                  onConfirmed: () async {
+                                    await _deleteBill(bill.id!);
+                                  },
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+        ),
+      ),
     );
   }
 }

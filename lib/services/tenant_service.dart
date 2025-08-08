@@ -3,12 +3,19 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TenantService {
   static final String baseUrl = '${dotenv.env['API_URL']}/tenants';
 
+  Future<Map<String, String>> _getAuthHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    return {'Content-Type': 'application/json', if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token'};
+  }
+
   Future<List<Tenant>> fetchTenants() async {
-    final response = await http.get(Uri.parse(baseUrl));
+    final response = await http.get(Uri.parse(baseUrl), headers: await _getAuthHeaders());
     if (response.statusCode == 200) {
       final List data = json.decode(response.body);
       return data.map((json) => Tenant.fromJson(json)).toList();
@@ -17,15 +24,11 @@ class TenantService {
     }
   }
 
-  Future<Tenant> createTenant(
-    String name,
-    int roomId,
-    DateTime joinDate,
-  ) async {
+  Future<Tenant> createTenant(String name, int roomId, DateTime joinDate) async {
     final dateOnly = DateFormat('yyyy-MM-dd').format(joinDate);
     final response = await http.post(
       Uri.parse(baseUrl),
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getAuthHeaders(),
       body: json.encode({'name': name, 'roomId': roomId, 'joinDate': dateOnly}),
     );
 
@@ -36,16 +39,11 @@ class TenantService {
     }
   }
 
-  Future<Tenant> updateTenant(
-    int id,
-    String name,
-    int roomId,
-    DateTime joinDate,
-  ) async {
+  Future<Tenant> updateTenant(int id, String name, int roomId, DateTime joinDate) async {
     final dateOnly = DateFormat('yyyy-MM-dd').format(joinDate);
     final response = await http.put(
       Uri.parse('$baseUrl/$id'),
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getAuthHeaders(),
       body: json.encode({'name': name, 'roomId': roomId, 'joinDate': dateOnly}),
     );
 
@@ -57,7 +55,7 @@ class TenantService {
   }
 
   Future<void> deleteTenant(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/$id'));
+    final response = await http.delete(Uri.parse('$baseUrl/$id'), headers: await _getAuthHeaders());
     if (response.statusCode != 204) {
       throw Exception('Failed to delete tenant');
     }

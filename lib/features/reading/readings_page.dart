@@ -1,34 +1,36 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
-
+import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
 import 'package:rental_management_system_flutter/models/reading.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
-
 import 'package:rental_management_system_flutter/features/reading/bloc/reading_bloc.dart';
 import 'package:rental_management_system_flutter/features/reading/bloc/reading_event.dart';
 import 'package:rental_management_system_flutter/features/reading/bloc/reading_state.dart';
-
 import 'package:rental_management_system_flutter/features/reading/widgets/reading_details_dialog.dart';
 import 'package:rental_management_system_flutter/features/reading/widgets/reading_form_dialog.dart';
-
 import 'package:rental_management_system_flutter/theme.dart';
 import 'package:rental_management_system_flutter/utils/confirmation_action.dart';
 import 'package:rental_management_system_flutter/utils/custom_add_button.dart';
 import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
 import 'package:rental_management_system_flutter/utils/custom_dropdown_form.dart';
 import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
+import 'package:rental_management_system_flutter/utils/error_widget.dart';
 
 class ReadingsPage extends StatefulWidget {
+  const ReadingsPage({super.key});
+
   @override
   ReadingsPageState createState() => ReadingsPageState();
 }
 
 class ReadingsPageState extends State<ReadingsPage> {
+  late AuthBloc authBloc;
+  late ReadingBloc readingBloc;
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
 
   int? _filterRoomId;
@@ -37,7 +39,9 @@ class ReadingsPageState extends State<ReadingsPage> {
   @override
   void initState() {
     super.initState();
-    context.read<ReadingBloc>().add(LoadReadings());
+    authBloc = context.read<AuthBloc>();
+    readingBloc = context.read<ReadingBloc>();
+    readingBloc.add(LoadReadings());
   }
 
   List<Reading> _applyFilters(List<Reading> readings, int? filterRoomId, int? filterTenantId) {
@@ -58,16 +62,12 @@ class ReadingsPageState extends State<ReadingsPage> {
 
   Future<void> _deleteReading(int id) async {
     final completer = Completer<void>();
-
-    context.read<ReadingBloc>().add(DeleteReading(id, onComplete: completer));
-
+    readingBloc.add(DeleteReading(id, onComplete: completer));
     return completer.future;
   }
 
   Future<void> _showReadingDialog({Reading? reading}) async {
-    final bloc = context.read<ReadingBloc>();
-    final state = bloc.state;
-
+    final state = readingBloc.state;
     if (state is! ReadingLoaded) return;
 
     final rooms = state.rooms;
@@ -84,36 +84,24 @@ class ReadingsPageState extends State<ReadingsPage> {
             rooms: rooms,
             tenants: tenants,
             readings: readings,
-            readingService: bloc.readingService,
+            readingService: readingBloc.readingService,
           ),
     );
 
     if (!mounted || result == null) return;
 
-    CustomSnackbar.show(context, reading != null ? 'Updating...' : 'Creating...', type: SnackBarType.loading);
+    final newReading = Reading(
+      id: reading?.id,
+      roomId: result['roomId'] as int,
+      tenantId: result['tenantId'] as int,
+      currReading: result['currReading'] as int,
+      prevReading: result['prevReading'] as int,
+    );
 
-    try {
-      final newReading =
-          reading ??
-          Reading(
-            id: reading?.id,
-            roomId: result['roomId'] as int,
-            tenantId: result['tenantId'] as int,
-            currReading: result['currReading'] as int,
-            prevReading: result['prevReading'] as int,
-          );
-      if (reading != null) {
-        bloc.add(UpdateReading(newReading));
-        if (!mounted) return;
-        CustomSnackbar.show(context, 'Reading updated', type: SnackBarType.success);
-      } else {
-        bloc.add(AddReading(newReading));
-        if (!mounted) return;
-        CustomSnackbar.show(context, 'Reading added', type: SnackBarType.success);
-      }
-    } catch (_) {
-      if (!mounted) return;
-      CustomSnackbar.show(context, 'Operation failed', type: SnackBarType.error);
+    if (reading != null) {
+      readingBloc.add(UpdateReading(newReading));
+    } else {
+      readingBloc.add(AddReading(newReading));
     }
   }
 
@@ -141,71 +129,81 @@ class ReadingsPageState extends State<ReadingsPage> {
       data: theme,
       child: Scaffold(
         appBar: const CustomAppBar(title: 'Electricity Readings'),
-        body: BlocBuilder<ReadingBloc, ReadingState>(
-          builder: (context, state) {
-            if (state is ReadingLoading) {
-              return const Center(child: CircularProgressIndicator());
+        body: BlocBuilder<AuthBloc, AuthState>(
+          builder: (context, authState) {
+            if (authState is Unauthenticated) {
+              return buildErrorWidget(context: context, message: authState.message);
             }
 
-            if (state is ReadingError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(state.message, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        context.read<ReadingBloc>().add(LoadReadings());
+            return BlocListener<ReadingBloc, ReadingState>(
+              listener: (context, state) {
+                if (state is ReadingError) {
+                  CustomSnackbar.show(context, state.message, type: SnackBarType.error);
+                } else if (state is AddSuccess) {
+                  CustomSnackbar.show(context, 'Reading created', type: SnackBarType.success);
+                } else if (state is UpdateSuccess) {
+                  CustomSnackbar.show(context, 'Reading updated', type: SnackBarType.success);
+                } else if (state is DeleteSuccess) {
+                  CustomSnackbar.show(context, 'Reading deleted', type: SnackBarType.success);
+                }
+              },
+              child: BlocBuilder<ReadingBloc, ReadingState>(
+                builder: (context, state) {
+                  if (state is ReadingLoading || state is ReadingInitial) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (state is ReadingError) {
+                    return buildErrorWidget(context: context, message: state.message, onRetry: () => readingBloc.add(LoadReadings()));
+                  }
+
+                  if (state is ReadingLoaded) {
+                    final filteredReadings = _applyFilters(state.readings, _filterRoomId, _filterTenantId);
+
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        readingBloc.add(LoadReadings());
                       },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Refresh'),
-                    ),
-                  ],
-                ),
-              );
-            }
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              isNarrow
+                                  ? Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      _buildRoomFilter(state.rooms, state.tenants),
+                                      const SizedBox(height: 12),
+                                      _buildTenantFilter(state.tenants),
+                                    ],
+                                  )
+                                  : Row(
+                                    children: [
+                                      Expanded(child: _buildRoomFilter(state.rooms, state.tenants)),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: _buildTenantFilter(state.tenants)),
+                                    ],
+                                  ),
+                              const SizedBox(height: 12),
+                              Expanded(child: _buildReadingsTable(filteredReadings, state.rooms, state.tenants)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
 
-            if (state is ReadingLoaded) {
-              final filteredReadings = _applyFilters(state.readings, _filterRoomId, _filterTenantId);
-
-              return RefreshIndicator(
-                onRefresh: () async {
-                  context.read<ReadingBloc>().add(LoadReadings());
+                  return const SizedBox.shrink();
                 },
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        isNarrow
-                            ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [_buildRoomFilter(state.rooms, state.tenants), const SizedBox(height: 12), _buildTenantFilter(state.tenants)],
-                            )
-                            : Row(
-                              children: [
-                                Expanded(child: _buildRoomFilter(state.rooms, state.tenants)),
-                                const SizedBox(width: 12),
-                                Expanded(child: _buildTenantFilter(state.tenants)),
-                              ],
-                            ),
-                        const SizedBox(height: 12),
-                        Expanded(child: _buildReadingsTable(filteredReadings, state.rooms, state.tenants)),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }
-
-            return const SizedBox.shrink();
+              ),
+            );
           },
         ),
         floatingActionButton: BlocBuilder<ReadingBloc, ReadingState>(
           builder: (context, state) {
             if (state is ReadingLoaded) {
-              return CustomAddButton(onPressed: () => _showReadingDialog(reading: null), label: 'New Reading');
+              return CustomAddButton(onPressed: () => _showReadingDialog(), label: 'New Reading');
             }
             return const SizedBox.shrink();
           },
@@ -231,7 +229,6 @@ class ReadingsPageState extends State<ReadingsPage> {
               _filterTenantId = null;
             } else if (_filterTenantId != null) {
               final tenant = _findTenantById(tenants, _filterTenantId!);
-
               if (tenant == null || tenant.roomId != _filterRoomId) {
                 _filterTenantId = null;
               }
@@ -311,9 +308,6 @@ class ReadingsPageState extends State<ReadingsPage> {
                               messenger: ScaffoldMessenger.of(context),
                               confirmTitle: 'Confirm Deletion',
                               confirmContent: 'Are you sure you want to delete this reading?',
-                              loadingMessage: 'Deleting...',
-                              successMessage: 'Reading deleted',
-                              failureMessage: 'Failed to delete reading',
                               onConfirmed: () async {
                                 await _deleteReading(reading.id!);
                               },

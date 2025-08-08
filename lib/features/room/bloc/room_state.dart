@@ -10,6 +10,12 @@ class RoomInitial extends RoomState {}
 
 class RoomLoading extends RoomState {}
 
+class AddSuccess extends RoomState {}
+
+class UpdateSuccess extends RoomState {}
+
+class DeleteSuccess extends RoomState {}
+
 class RoomLoaded extends RoomState {
   final List<Room> rooms;
 

@@ -12,6 +12,12 @@ class ReadingInitial extends ReadingState {}
 
 class ReadingLoading extends ReadingState {}
 
+class AddSuccess extends ReadingState {}
+
+class UpdateSuccess extends ReadingState {}
+
+class DeleteSuccess extends ReadingState {}
+
 class ReadingLoaded extends ReadingState {
   final List<Reading> readings;
   final List<Room> rooms;

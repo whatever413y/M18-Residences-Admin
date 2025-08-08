@@ -27,6 +27,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
     try {
       await roomService.createRoom(event.room.name, event.room.rent);
       add(LoadRooms());
+      emit(AddSuccess());
     } catch (e) {
       emit(RoomError('Failed to create room'));
     }
@@ -36,6 +37,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
     try {
       await roomService.updateRoom(event.room.id!, event.room.name, event.room.rent);
       add(LoadRooms());
+      emit(UpdateSuccess());
     } catch (e) {
       emit(RoomError('Failed to update room'));
     }
@@ -46,6 +48,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       await roomService.deleteRoom(event.id);
       event.onComplete.complete();
       add(LoadRooms());
+      emit(DeleteSuccess());
     } catch (e) {
       event.onComplete.completeError(e);
       emit(RoomError('Failed to delete room: $e'));

@@ -2,12 +2,19 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BillingService {
   static final String baseUrl = '${dotenv.env['API_URL']}/bills';
 
+  Future<Map<String, String>> _getAuthHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    return {'Content-Type': 'application/json', if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token'};
+  }
+
   Future<List<Bill>> fetchBills() async {
-    final response = await http.get(Uri.parse(baseUrl));
+    final response = await http.get(Uri.parse(baseUrl), headers: await _getAuthHeaders());
     if (response.statusCode == 200) {
       final List data = json.decode(response.body);
       return data.map((json) => Bill.fromJson(json)).toList();
@@ -33,11 +40,7 @@ class BillingService {
       'additionalDescription': additionalDescription,
     };
 
-    final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(body),
-    );
+    final response = await http.post(Uri.parse(baseUrl), headers: await _getAuthHeaders(), body: json.encode(body));
 
     if (response.statusCode == 201) {
       return Bill.fromJson(json.decode(response.body));
@@ -57,7 +60,7 @@ class BillingService {
   }) async {
     final response = await http.put(
       Uri.parse('$baseUrl/$id'),
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getAuthHeaders(),
       body: json.encode({
         'tenantId': tenantId,
         'readingId': readingId,
@@ -76,7 +79,7 @@ class BillingService {
   }
 
   Future<void> deleteBill(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/$id'));
+    final response = await http.delete(Uri.parse('$baseUrl/$id'), headers: await _getAuthHeaders());
     if (response.statusCode != 204) {
       throw Exception('Failed to delete bill');
     }

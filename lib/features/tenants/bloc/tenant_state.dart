@@ -11,6 +11,12 @@ class TenantInitial extends TenantState {}
 
 class TenantLoading extends TenantState {}
 
+class AddSuccess extends TenantState {}
+
+class UpdateSuccess extends TenantState {}
+
+class DeleteSuccess extends TenantState {}
+
 class TenantLoaded extends TenantState {
   final List<Tenant> tenants;
   final List<Room> rooms;

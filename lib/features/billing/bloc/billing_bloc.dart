@@ -5,7 +5,6 @@ import 'package:rental_management_system_flutter/services/tenant_service.dart';
 import 'billing_event.dart';
 import 'billing_state.dart';
 import 'package:rental_management_system_flutter/services/billing_service.dart';
-import 'package:rental_management_system_flutter/models/billing.dart';
 
 class BillingBloc extends Bloc<BillingEvent, BillingState> {
   final ReadingService readingService;
@@ -13,12 +12,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
   final TenantService tenantService;
   final BillingService billingService;
 
-  BillingBloc({
-    required this.readingService,
-    required this.roomService,
-    required this.tenantService,
-    required this.billingService,
-  }) : super(BillingInitial()) {
+  BillingBloc({required this.readingService, required this.roomService, required this.tenantService, required this.billingService})
+    : super(BillingInitial()) {
     on<LoadBills>(_onLoadBills);
     on<AddBill>(_onAddBill);
     on<UpdateBill>(_onUpdateBill);
@@ -39,10 +34,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
   }
 
   Future<void> _onAddBill(AddBill event, Emitter<BillingState> emit) async {
-    if (state is! BillingLoaded) return;
-    final currentState = state as BillingLoaded;
     try {
-      final newBill = await billingService.createBill(
+      await billingService.createBill(
         tenantId: event.bill.tenantId,
         readingId: event.bill.readingId,
         roomCharges: event.bill.roomCharges,
@@ -50,28 +43,16 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         additionalCharges: event.bill.additionalCharges,
         additionalDescription: event.bill.additionalDescription,
       );
-      final updatedList = List<Bill>.from(currentState.bills)..add(newBill);
-      emit(
-        BillingLoaded(
-          updatedList,
-          currentState.rooms,
-          currentState.tenants,
-          currentState.readings,
-        ),
-      );
+      add(LoadBills());
+      emit(AddSuccess());
     } catch (_) {
       emit(BillingError('Failed to create bill'));
     }
   }
 
-  Future<void> _onUpdateBill(
-    UpdateBill event,
-    Emitter<BillingState> emit,
-  ) async {
-    if (state is! BillingLoaded) return;
-    final currentState = state as BillingLoaded;
+  Future<void> _onUpdateBill(UpdateBill event, Emitter<BillingState> emit) async {
     try {
-      final updatedBill = await billingService.updateBill(
+      await billingService.updateBill(
         id: event.bill.id!,
         tenantId: event.bill.tenantId,
         readingId: event.bill.readingId,
@@ -80,44 +61,20 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         additionalCharges: event.bill.additionalCharges,
         additionalDescription: event.bill.additionalDescription,
       );
-
-      final updatedList =
-          currentState.bills.map((b) {
-            return b.id == updatedBill.id ? updatedBill : b;
-          }).toList();
-
-      emit(
-        BillingLoaded(
-          updatedList,
-          currentState.rooms,
-          currentState.tenants,
-          currentState.readings,
-        ),
-      );
+      add(LoadBills());
+      emit(UpdateSuccess());
     } catch (_) {
       emit(BillingError('Failed to update bill'));
     }
   }
 
-  Future<void> _onDeleteBill(
-    DeleteBill event,
-    Emitter<BillingState> emit,
-  ) async {
+  Future<void> _onDeleteBill(DeleteBill event, Emitter<BillingState> emit) async {
     if (state is! BillingLoaded) return;
-    final currentState = state as BillingLoaded;
     try {
       await billingService.deleteBill(event.id);
       event.onComplete.complete();
-      final updatedList =
-          currentState.bills.where((b) => b.id != event.id).toList();
-      emit(
-        BillingLoaded(
-          updatedList,
-          currentState.rooms,
-          currentState.tenants,
-          currentState.readings,
-        ),
-      );
+      add(LoadBills());
+      emit(DeleteSuccess());
     } catch (e) {
       event.onComplete.completeError(e);
       emit(BillingError('Failed to delete bill: $e'));

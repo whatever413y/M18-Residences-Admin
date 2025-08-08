@@ -30,6 +30,7 @@ class TenantBloc extends Bloc<TenantEvent, TenantState> {
     try {
       await tenantService.createTenant(event.tenant.name, event.tenant.roomId, event.tenant.joinDate);
       add(LoadTenants());
+      emit(AddSuccess());
     } catch (e) {
       emit(TenantError('Failed to add tenant'));
     }
@@ -39,6 +40,7 @@ class TenantBloc extends Bloc<TenantEvent, TenantState> {
     try {
       await tenantService.updateTenant(event.tenant.id!, event.tenant.name, event.tenant.roomId, event.tenant.joinDate);
       add(LoadTenants());
+      emit(UpdateSuccess());
     } catch (e) {
       emit(TenantError('Failed to update tenant'));
     }
@@ -49,6 +51,7 @@ class TenantBloc extends Bloc<TenantEvent, TenantState> {
       await tenantService.deleteTenant(event.id);
       event.onComplete.complete();
       add(LoadTenants());
+      emit(DeleteSuccess());
     } catch (e) {
       event.onComplete.completeError(e);
       emit(TenantError('Failed to delete tenant: $e'));
