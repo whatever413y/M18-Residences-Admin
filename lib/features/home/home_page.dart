@@ -63,7 +63,7 @@ class HomePageState extends State<HomePage> {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: screenWidth < 600 ? screenWidth : 500),
+                    constraints: BoxConstraints(maxWidth: screenWidth < 800 ? screenWidth : 800),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [

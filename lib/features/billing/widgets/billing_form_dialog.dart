@@ -159,9 +159,12 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width * 0.6;
+
     return AlertDialog(
+      insetPadding: EdgeInsets.zero,
       title: Text(widget.bill == null ? 'Generate Bill' : 'Update Bill'),
-      content: _buildContent(),
+      content: SizedBox(width: screenWidth, child: _buildContent()),
       actions: _buildActions(context, widget.bill != null),
     );
   }
@@ -190,63 +193,145 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   }
 
   Widget _buildAdditionalChargesList() {
+    final isWide = MediaQuery.of(context).size.width > 800;
+
     return Column(
       children: [
         ...List.generate(_additionalCharges.length, (index) {
+          final fields = [
+            Expanded(
+              flex: 3,
+              child: CustomTextFormField(
+                controller: _additionalChargeControllers[index],
+                labelText: 'Additional Charge',
+                keyboardType: const TextInputType.numberWithOptions(signed: false),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
+                ),
+                validator: (value) {
+                  final amount = int.tryParse(value ?? '') ?? 0;
+                  final description = _additionalDescControllers[index].text.trim();
+
+                  if (amount < 0) {
+                    return 'Enter a valid number';
+                  }
+
+                  if (amount > 0 && description.isEmpty) {
+                    return 'Description is required';
+                  }
+
+                  if (description.isNotEmpty && amount <= 0) {
+                    return 'Please fill in an amount';
+                  }
+
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              flex: 6,
+              child: CustomTextFormField(
+                controller: _additionalDescControllers[index],
+                labelText: 'Description',
+                keyboardType: TextInputType.text,
+                validator: (value) {
+                  final description = value?.trim() ?? '';
+                  final amount = int.tryParse(_additionalChargeControllers[index].text) ?? 0;
+
+                  if (description.isNotEmpty && amount <= 0) {
+                    return 'Please fill in an amount';
+                  }
+
+                  if (amount > 0 && description.isEmpty) {
+                    return 'Description is required';
+                  }
+
+                  if (description.length > 200) {
+                    return 'Description too long';
+                  }
+
+                  return null;
+                },
+              ),
+            ),
+
+            const SizedBox(width: 8),
+            if (_additionalCharges.length > 1)
+              IconButton(
+                icon: const Icon(Icons.remove_circle, color: Colors.red),
+                onPressed: () {
+                  setState(() {
+                    _additionalCharges.removeAt(index);
+                    _additionalChargeControllers[index].dispose();
+                    _additionalDescControllers[index].dispose();
+                    _additionalChargeControllers.removeAt(index);
+                    _additionalDescControllers.removeAt(index);
+                  });
+                },
+              ),
+          ];
+
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: CustomTextFormField(
-                    controller: _additionalChargeControllers[index],
-                    labelText: 'Additional Charge',
-                    keyboardType: const TextInputType.numberWithOptions(signed: false),
-                    prefixIcon: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
+            child:
+                isWide
+                    ? Row(children: fields)
+                    : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CustomTextFormField(
+                          controller: _additionalChargeControllers[index],
+                          labelText: 'Additional Charge',
+                          keyboardType: const TextInputType.numberWithOptions(signed: false),
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
+                          ),
+                          validator: (value) {
+                            final amount = int.tryParse(value ?? '') ?? 0;
+                            final description = _additionalDescControllers[index].text.trim();
+
+                            if (amount < 0) return 'Enter a valid number';
+                            if (amount > 0 && description.isEmpty) return 'Description is required';
+                            if (description.isNotEmpty && amount <= 0) return 'Please fill in an amount';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        CustomTextFormField(
+                          controller: _additionalDescControllers[index],
+                          labelText: 'Description',
+                          keyboardType: TextInputType.text,
+                          validator: (value) {
+                            final description = value?.trim() ?? '';
+                            final amount = int.tryParse(_additionalChargeControllers[index].text) ?? 0;
+
+                            if (description.isNotEmpty && amount <= 0) return 'Please fill in an amount';
+                            if (amount > 0 && description.isEmpty) return 'Description is required';
+                            if (description.length > 200) return 'Description too long';
+                            return null;
+                          },
+                        ),
+                        if (_additionalCharges.length > 1)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: IconButton(
+                              icon: const Icon(Icons.remove_circle, color: Colors.red),
+                              onPressed: () {
+                                setState(() {
+                                  _additionalCharges.removeAt(index);
+                                  _additionalChargeControllers[index].dispose();
+                                  _additionalDescControllers[index].dispose();
+                                  _additionalChargeControllers.removeAt(index);
+                                  _additionalDescControllers.removeAt(index);
+                                });
+                              },
+                            ),
+                          ),
+                      ],
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) return null;
-                      if (int.tryParse(value) == null) {
-                        return 'Enter a valid number';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  flex: 5,
-                  child: CustomTextFormField(
-                    controller: _additionalDescControllers[index],
-                    labelText: 'Description',
-                    keyboardType: TextInputType.text,
-                    validator: (value) {
-                      if (value != null && value.trim().isNotEmpty && value.length > 200) {
-                        return 'Description too long';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (_additionalCharges.length > 1)
-                  IconButton(
-                    icon: const Icon(Icons.remove_circle, color: Colors.red),
-                    onPressed: () {
-                      setState(() {
-                        _additionalCharges.removeAt(index);
-                        _additionalChargeControllers[index].dispose();
-                        _additionalDescControllers[index].dispose();
-                        _additionalChargeControllers.removeAt(index);
-                        _additionalDescControllers.removeAt(index);
-                      });
-                    },
-                  ),
-              ],
-            ),
           );
         }),
         Align(

@@ -54,8 +54,13 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.tenant != null;
-
-    return AlertDialog(title: _buildTitle(isEditing), content: _buildContent(), actions: _buildActions(context, isEditing));
+    final screenWidth = MediaQuery.of(context).size.width * 0.3;
+    return AlertDialog(
+      insetPadding: EdgeInsets.zero,
+      title: _buildTitle(isEditing),
+      content: SizedBox(width: screenWidth, child: _buildContent()),
+      actions: _buildActions(context, isEditing),
+    );
   }
 
   Widget _buildContent() {

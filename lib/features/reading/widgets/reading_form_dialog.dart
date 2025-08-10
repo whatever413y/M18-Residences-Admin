@@ -79,9 +79,11 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width * 0.6;
     return AlertDialog(
+      insetPadding: EdgeInsets.zero,
       title: Text(widget.reading == null ? 'Add New Reading' : 'Edit Reading'),
-      content: _buildContent(),
+      content: SizedBox(width: screenWidth, child: _buildContent()),
       actions: _buildActions(context, widget.reading != null),
     );
   }

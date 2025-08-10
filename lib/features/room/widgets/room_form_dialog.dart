@@ -20,17 +20,12 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.room?.name ?? '');
-    _rentController = TextEditingController(
-      text: widget.room != null ? widget.room!.rent.toString() : '',
-    );
+    _rentController = TextEditingController(text: widget.room != null ? widget.room!.rent.toString() : '');
   }
 
   void _submit() {
     if (_formKey.currentState?.validate() ?? false) {
-      final data = {
-        'name': _nameController.text.trim(),
-        'rent': double.parse(_rentController.text.trim()),
-      };
+      final data = {'name': _nameController.text.trim(), 'rent': double.parse(_rentController.text.trim())};
       Navigator.of(context).pop(data);
     }
   }
@@ -44,11 +39,12 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width * 0.3;
     final isEditing = widget.room != null;
-
     return AlertDialog(
+      insetPadding: EdgeInsets.zero,
       title: Text(isEditing ? 'Edit Room' : 'Add New Room'),
-      content: _buildContent(),
+      content: SizedBox(width: screenWidth, child: _buildContent()),
       actions: _buildActions(),
     );
   }
@@ -56,14 +52,7 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
   Widget _buildContent() {
     return Form(
       key: _formKey,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildNameField(),
-          const SizedBox(height: 12),
-          _buildRentField(),
-        ],
-      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [_buildNameField(), const SizedBox(height: 12), _buildRentField()]),
     );
   }
 
@@ -72,13 +61,8 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
       controller: _nameController,
       labelText: 'Room Name',
       textInputAction: TextInputAction.next,
-      validator:
-          (val) =>
-              (val == null || val.trim().isEmpty) ? 'Enter room name' : null,
-      prefixIcon: Icon(
-        Icons.meeting_room,
-        color: Theme.of(context).primaryColor,
-      ),
+      validator: (val) => (val == null || val.trim().isEmpty) ? 'Enter room name' : null,
+      prefixIcon: Icon(Icons.meeting_room, color: Theme.of(context).primaryColor),
     );
   }
 
@@ -97,14 +81,7 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
       },
       prefixIcon: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Text(
-          '₱',
-          style: TextStyle(
-            color: Theme.of(context).primaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
       ),
       onFieldSubmitted: (_) => _submit(),
     );
@@ -114,10 +91,7 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
     final isEditing = widget.room != null;
 
     return [
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(null),
-        child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-      ),
+      TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancel', style: TextStyle(color: Colors.grey))),
       ElevatedButton(
         onPressed: _submit,
         style: ElevatedButton.styleFrom(

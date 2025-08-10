@@ -128,7 +128,7 @@ class ReadingsPageState extends State<ReadingsPage> {
   Widget build(BuildContext context) {
     final theme = AppTheme.lightTheme;
     final screenWidth = MediaQuery.of(context).size.width;
-    final bool isNarrow = screenWidth < 500;
+    final bool isNarrow = screenWidth < 800;
     final horizontalPadding = screenWidth * 0.05;
 
     return Theme(

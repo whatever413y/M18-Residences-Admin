@@ -151,7 +151,7 @@ class BillingsPageState extends State<BillingsPage> {
     final theme = AppTheme.lightTheme;
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth * 0.05;
-    final isNarrow = screenWidth < 500;
+    final isNarrow = screenWidth < 800;
 
     return Theme(
       data: theme,
@@ -378,11 +378,27 @@ class BillingsPageState extends State<BillingsPage> {
                 cells: [
                   DataCell(Text(room?.name ?? '-')),
                   DataCell(Text(tenant?.name ?? '-')),
-                  DataCell(Text('${_getLatestReading(readings, tenant?.roomId ?? 0, bill.tenantId)?.consumption}')),
+                  DataCell(Text('${_getLatestReading(readings, tenant?.roomId ?? 0, bill.tenantId)?.consumption ?? '-'}')),
                   DataCell(Text(currencyFormat.format(bill.electricCharges))),
                   DataCell(Text(currencyFormat.format(bill.roomCharges))),
                   DataCell(
-                    Text((bill.additionalCharges != null && bill.additionalCharges != 0) ? currencyFormat.format(bill.additionalCharges!) : '-'),
+                    bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty
+                        ? SizedBox(
+                          width: 200, // or any reasonable max width
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children:
+                                  bill.additionalCharges!.map((charge) {
+                                    final amountStr = currencyFormat.format(charge.amount);
+                                    final desc = charge.description.isNotEmpty ? charge.description : '-';
+                                    return Text('$amountStr - $desc');
+                                  }).toList(),
+                            ),
+                          ),
+                        )
+                        : const Text('-'),
                   ),
                   DataCell(Text(bill.additionalDescription?.isNotEmpty == true ? bill.additionalDescription! : '-')),
                   DataCell(Text(currencyFormat.format(bill.totalAmount))),
