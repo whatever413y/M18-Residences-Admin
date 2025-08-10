@@ -55,33 +55,46 @@ class BillingDetailsDialog extends StatelessWidget {
     return Divider(color: Colors.grey.shade300, thickness: 1);
   }
 
+  Widget _spacer() => const SizedBox(height: 12);
+
   Widget _buildDetails() {
     final currencyFormat = NumberFormat.currency(locale: 'en_PH', symbol: '₱', decimalDigits: 0);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildDetailRow('Tenant', tenantName),
-        const SizedBox(height: 12),
-        _buildDetailRow('Room', roomName),
-        const SizedBox(height: 12),
-        _buildDetailRow('Consumption', '$consumption kWh'),
-        const SizedBox(height: 12),
-        _buildDetailRow('Electric Charges', currencyFormat.format(bill.electricCharges)),
-        const SizedBox(height: 12),
-        _buildDetailRow('Room Charges', currencyFormat.format(bill.roomCharges)),
-        // if (bill.additionalCharges != null && bill.additionalCharges != 0) ...[
-        //   const SizedBox(height: 12),
-        //   _buildDetailRow(bill.additionalCharges! < 0 ? 'Discount' : 'Additional Charges', currencyFormat.format(bill.additionalCharges!.abs())),
-        // ],
-        // if ((bill.additionalDescription ?? '').isNotEmpty) ...[const SizedBox(height: 12), _buildDetailRow('Notes', bill.additionalDescription!)],
-        const SizedBox(height: 12),
-        _buildDivider(),
-        const SizedBox(height: 12),
-        _buildDetailRow('Total Amount', currencyFormat.format(bill.totalAmount)),
-        const SizedBox(height: 12),
-        _buildDetailRow('Date', date),
-      ],
-    );
+
+    List<Widget> detailRows = [
+      _buildDetailRow('Tenant', tenantName),
+      _spacer(),
+      _buildDetailRow('Room', roomName),
+      _spacer(),
+      _buildDetailRow('Consumption', '$consumption kWh'),
+      _spacer(),
+      _buildDetailRow('Electric Charges', currencyFormat.format(bill.electricCharges)),
+      _spacer(),
+      _buildDetailRow('Room Charges', currencyFormat.format(bill.roomCharges)),
+    ];
+
+    // Add each additional charge as a separate detail row
+    if (bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty) {
+      for (final charge in bill.additionalCharges!) {
+        final label = charge.amount < 0 ? 'Discount' : 'Additional Charge';
+        detailRows.add(_spacer());
+        detailRows.add(_buildDetailRow(label, currencyFormat.format(charge.amount.abs())));
+        if (charge.description.isNotEmpty) {
+          detailRows.add(_spacer());
+          detailRows.add(_buildDetailRow('Notes', charge.description));
+        }
+      }
+    }
+
+    detailRows.addAll([
+      _spacer(),
+      _buildDivider(),
+      _spacer(),
+      _buildDetailRow('Total Amount', currencyFormat.format(bill.totalAmount)),
+      _spacer(),
+      _buildDetailRow('Date', date),
+    ]);
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: detailRows);
   }
 
   Widget _buildDetailRow(String label, String value) {

@@ -384,23 +384,40 @@ class BillingsPageState extends State<BillingsPage> {
                   DataCell(
                     bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty
                         ? SizedBox(
-                          width: 200, // or any reasonable max width
+                          width: 50,
                           child: SingleChildScrollView(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children:
                                   bill.additionalCharges!.map((charge) {
-                                    final amountStr = currencyFormat.format(charge.amount);
-                                    final desc = charge.description.isNotEmpty ? charge.description : '-';
-                                    return Text('$amountStr - $desc');
+                                    final amountStr = charge.amount > 0 ? currencyFormat.format(charge.amount) : '-';
+                                    return Text(amountStr);
                                   }).toList(),
                             ),
                           ),
                         )
                         : const Text('-'),
                   ),
-                  DataCell(Text(bill.additionalDescription?.isNotEmpty == true ? bill.additionalDescription! : '-')),
+
+                  DataCell(
+                    bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty
+                        ? SizedBox(
+                          width: 150,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children:
+                                  bill.additionalCharges!.map((charge) {
+                                    final desc = charge.description.isNotEmpty ? charge.description : '-';
+                                    return Text(desc);
+                                  }).toList(),
+                            ),
+                          ),
+                        )
+                        : const Text('-'),
+                  ),
                   DataCell(Text(currencyFormat.format(bill.totalAmount))),
                   DataCell(Text(_dateFormat.format(bill.createdAt!))),
                   DataCell(
