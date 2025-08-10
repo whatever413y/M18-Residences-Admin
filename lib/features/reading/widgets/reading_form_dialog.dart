@@ -50,12 +50,7 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
     } else {
       _selectedRoomId = widget.selectedRoomId;
       _selectedTenantId = widget.selectedTenantId;
-      prevController.text =
-          _getLatestReading(
-            _selectedRoomId ?? 0,
-            _selectedTenantId ?? 0,
-          )?.currReading.toString() ??
-          '0';
+      prevController.text = _getLatestReading(_selectedRoomId ?? 0, _selectedTenantId ?? 0)?.currReading.toString() ?? '0';
       currController.clear();
     }
   }
@@ -69,17 +64,12 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
 
   Reading? _getLatestReading(int roomId, int tenantId) {
     final filtered =
-        widget.readings
-            .where((r) => r.roomId == roomId && r.tenantId == tenantId)
-            .toList()
-          ..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+        widget.readings.where((r) => r.roomId == roomId && r.tenantId == tenantId).toList()..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
     return filtered.isNotEmpty ? filtered.first : null;
   }
 
   void _updatePreviousReading() {
-    if (widget.reading != null ||
-        _selectedRoomId == null ||
-        _selectedTenantId == null) {
+    if (widget.reading != null || _selectedRoomId == null || _selectedTenantId == null) {
       return;
     }
     final latest = _getLatestReading(_selectedRoomId!, _selectedTenantId!);
@@ -115,10 +105,7 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
 
   List<Widget> _buildActions(BuildContext context, bool isEditing) {
     return [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
-      ),
+      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
       ElevatedButton(
         onPressed: _submit,
         style: ElevatedButton.styleFrom(
@@ -136,19 +123,14 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
       value: _selectedRoomId,
       items: [
         const DropdownMenuItem<int>(value: null, child: Text('All Rooms')),
-        ...widget.rooms.map(
-          (room) =>
-              DropdownMenuItem<int>(value: room.id, child: Text(room.name)),
-        ),
+        ...widget.rooms.map((room) => DropdownMenuItem<int>(value: room.id, child: Text(room.name))),
       ],
       onChanged: (value) {
         setState(() {
           _selectedRoomId = value;
 
           if (_selectedTenantId != null) {
-            final tenant = widget.tenants.firstWhereOrNull(
-              (t) => t.id == _selectedTenantId,
-            );
+            final tenant = widget.tenants.firstWhereOrNull((t) => t.id == _selectedTenantId);
             if (tenant == null || tenant.roomId != _selectedRoomId) {
               _selectedTenantId = null;
             }
@@ -165,31 +147,17 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
       hint: 'Choose a tenant',
       value: _selectedTenantId,
       items: [
-        const DropdownMenuItem<int>(
-          value: null,
-          enabled: false,
-          child: Text('Choose a tenant'),
-        ),
+        const DropdownMenuItem<int>(value: null, enabled: false, child: Text('Choose a tenant')),
         ...widget.tenants
-            .where(
-              (t) => _selectedRoomId == null || t.roomId == _selectedRoomId,
-            )
-            .map(
-              (tenant) => DropdownMenuItem<int>(
-                value: tenant.id,
-                child: Text(tenant.name),
-              ),
-            ),
+            .where((t) => _selectedRoomId == null || t.roomId == _selectedRoomId)
+            .map((tenant) => DropdownMenuItem<int>(value: tenant.id, child: Text(tenant.name))),
       ],
       onChanged: (value) {
         setState(() {
           _selectedTenantId = value;
 
           if (_selectedTenantId != null) {
-            final tenantRoomId =
-                widget.tenants
-                    .firstWhere((t) => t.id == _selectedTenantId)
-                    .roomId;
+            final tenantRoomId = widget.tenants.firstWhere((t) => t.id == _selectedTenantId).roomId;
             if (_selectedRoomId != tenantRoomId) {
               _selectedRoomId = tenantRoomId;
             }
@@ -204,50 +172,40 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
   Widget _buildPrevReadingField() {
     return CustomTextFormField(
       controller: prevController,
-      labelText: 'Previous Reading',
-      enabled: false,
-      prefixIcon: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Text(
-          '₱',
-          style: TextStyle(
-            color: Theme.of(context).primaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      labelText: 'Previous Reading (kWh)',
+      keyboardType: TextInputType.number,
+      textInputAction: TextInputAction.next,
+      validator: (value) {
+        final prev = int.tryParse(value ?? '');
+        final curr = int.tryParse(currController.text);
+        if (prev == null || prev < 0) {
+          return 'Enter a valid previous reading';
+        }
+        if (curr != null && prev > curr) {
+          return 'Previous reading must be ≤ current reading';
+        }
+        return null;
+      },
     );
   }
 
   Widget _buildCurrReadingField() {
     return CustomTextFormField(
       controller: currController,
-      labelText: 'Current Reading',
+      labelText: 'Current Reading (kWh)',
       keyboardType: TextInputType.number,
       textInputAction: TextInputAction.done,
       validator: (value) {
-        final parsed = int.tryParse(value ?? '');
+        final curr = int.tryParse(value ?? '');
         final prev = int.tryParse(prevController.text);
-        if (parsed == null || parsed < 0) {
-          return 'Enter a valid reading';
+        if (curr == null || curr < 0) {
+          return 'Enter a valid current reading';
         }
-        if (prev != null && parsed < prev) {
-          return 'Current must be ≥ previous';
+        if (prev != null && curr < prev) {
+          return 'Current reading must be ≥ previous reading';
         }
         return null;
       },
-      prefixIcon: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Text(
-          '₱',
-          style: TextStyle(
-            color: Theme.of(context).primaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
     );
   }
 
@@ -255,11 +213,6 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
     if (_formKey.currentState?.validate() != true) return;
     final prev = int.tryParse(prevController.text);
     final curr = int.tryParse(currController.text);
-    Navigator.of(context).pop({
-      'roomId': _selectedRoomId,
-      'tenantId': _selectedTenantId,
-      'prevReading': prev,
-      'currReading': curr,
-    });
+    Navigator.of(context).pop({'roomId': _selectedRoomId, 'tenantId': _selectedTenantId, 'prevReading': prev, 'currReading': curr});
   }
 }

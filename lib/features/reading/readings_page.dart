@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
 import 'package:rental_management_system_flutter/models/reading.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
@@ -31,15 +32,18 @@ class ReadingsPage extends StatefulWidget {
 class ReadingsPageState extends State<ReadingsPage> {
   late AuthBloc authBloc;
   late ReadingBloc readingBloc;
-  final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
+  final DateFormat _dateFormat = DateFormat('MMM d, yyyy');
 
   int? _filterRoomId;
   int? _filterTenantId;
+  int? _filterYear;
+  int? _filterMonth;
 
   @override
   void initState() {
     super.initState();
     authBloc = context.read<AuthBloc>();
+    authBloc.add(CheckAuthStatus());
     readingBloc = context.read<ReadingBloc>();
     readingBloc.add(LoadReadings());
   }
@@ -168,23 +172,36 @@ class ReadingsPageState extends State<ReadingsPage> {
                         padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
                         child: Center(
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              isNarrow
-                                  ? Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      _buildRoomFilter(state.rooms, state.tenants),
-                                      const SizedBox(height: 12),
-                                      _buildTenantFilter(state.tenants),
-                                    ],
-                                  )
-                                  : Row(
+                              if (isNarrow)
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    _buildRoomFilter(state.rooms, state.tenants),
+                                    const SizedBox(height: 12),
+                                    _buildTenantFilter(state.tenants),
+                                    const SizedBox(height: 12),
+                                    _buildYearFilter(state.readings),
+                                    const SizedBox(height: 12),
+                                    _buildMonthFilter(state.readings),
+                                  ],
+                                )
+                              else
+                                Center(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Expanded(child: _buildRoomFilter(state.rooms, state.tenants)),
                                       const SizedBox(width: 12),
                                       Expanded(child: _buildTenantFilter(state.tenants)),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: _buildYearFilter(state.readings)),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: _buildMonthFilter(state.readings)),
                                     ],
                                   ),
+                                ),
                               const SizedBox(height: 12),
                               Expanded(child: _buildReadingsTable(filteredReadings, state.rooms, state.tenants)),
                             ],
@@ -213,57 +230,90 @@ class ReadingsPageState extends State<ReadingsPage> {
   }
 
   Widget _buildRoomFilter(List<Room> rooms, List<Tenant> tenants) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: CustomDropdownForm<int>(
-        label: 'Filter by Room',
-        items: [
-          DropdownMenuItem(value: null, child: Text('All Rooms')),
-          ...rooms.map((room) => DropdownMenuItem(value: room.id, child: Text(room.name))),
-        ],
-        value: _filterRoomId,
-        onChanged: (value) {
-          setState(() {
-            _filterRoomId = value;
-            if (_filterRoomId == null) {
+    return CustomDropdownForm<int>(
+      label: 'Filter by Room',
+      items: [
+        DropdownMenuItem(value: null, child: Text('All Rooms')),
+        ...rooms.map((room) => DropdownMenuItem(value: room.id, child: Text(room.name))),
+      ],
+      value: _filterRoomId,
+      onChanged: (value) {
+        setState(() {
+          _filterRoomId = value;
+          if (_filterRoomId == null) {
+            _filterTenantId = null;
+          } else if (_filterTenantId != null) {
+            final tenant = _findTenantById(tenants, _filterTenantId!);
+            if (tenant == null || tenant.roomId != _filterRoomId) {
               _filterTenantId = null;
-            } else if (_filterTenantId != null) {
-              final tenant = _findTenantById(tenants, _filterTenantId!);
-              if (tenant == null || tenant.roomId != _filterRoomId) {
-                _filterTenantId = null;
-              }
             }
-          });
-        },
-      ),
+          }
+        });
+      },
     );
   }
 
   Widget _buildTenantFilter(List<Tenant> tenants) {
     final filteredTenants = tenants.where((t) => _filterRoomId == null || t.roomId == _filterRoomId).toList();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: CustomDropdownForm<int>(
-        label: 'Filter by Tenant',
-        hint: 'Choose a tenant',
-        items: [
-          DropdownMenuItem(value: null, enabled: false, child: Text('Choose a tenant')),
-          ...filteredTenants.map((tenant) => DropdownMenuItem(value: tenant.id, child: Text(tenant.name))),
-        ],
-        value: _filterTenantId,
-        onChanged: (value) {
-          setState(() {
-            _filterTenantId = value;
-            if (value != null) {
-              final tenant = tenants.firstWhere((t) => t.id == value);
-              if (_filterRoomId != tenant.roomId) {
-                _filterRoomId = tenant.roomId;
-              }
+    return CustomDropdownForm<int>(
+      label: 'Filter by Tenant',
+      hint: 'Choose a tenant',
+      items: [
+        DropdownMenuItem(value: null, enabled: false, child: Text('Choose a tenant')),
+        ...filteredTenants.map((tenant) => DropdownMenuItem(value: tenant.id, child: Text(tenant.name))),
+      ],
+      value: _filterTenantId,
+      onChanged: (value) {
+        setState(() {
+          _filterTenantId = value;
+          if (value != null) {
+            final tenant = tenants.firstWhere((t) => t.id == value);
+            if (_filterRoomId != tenant.roomId) {
+              _filterRoomId = tenant.roomId;
             }
-          });
-        },
-      ),
+          }
+        });
+      },
+    );
+  }
+
+  Widget _buildYearFilter(List<Reading> readings) {
+    final years = readings.map((b) => b.createdAt!.year).toSet().toList()..sort();
+
+    return CustomDropdownForm<int>(
+      label: 'Filter by Year',
+      items: [
+        const DropdownMenuItem(value: null, child: Text('All Years')),
+        ...years.map((year) => DropdownMenuItem(value: year, child: Text(year.toString()))),
+      ],
+      value: _filterYear,
+      onChanged: (val) {
+        setState(() {
+          _filterYear = val;
+        });
+      },
+    );
+  }
+
+  Widget _buildMonthFilter(List<Reading> readings) {
+    final months = readings.map((b) => b.createdAt!.month).toSet().toList()..sort();
+
+    return CustomDropdownForm<int>(
+      label: 'Filter by Month',
+      items: [
+        const DropdownMenuItem(value: null, child: Text('All Months')),
+        ...months.map((month) {
+          final monthName = DateFormat.MMMM().format(DateTime(0, month));
+          return DropdownMenuItem(value: month, child: Text(monthName));
+        }),
+      ],
+      value: _filterMonth,
+      onChanged: (val) {
+        setState(() {
+          _filterMonth = val;
+        });
+      },
     );
   }
 

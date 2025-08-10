@@ -162,8 +162,7 @@ class BillingsPageState extends State<BillingsPage> {
             }
             return BlocListener<BillingBloc, BillingState>(
               listener: (context, state) {
-                if (state is BillingLoading || state is BillingInitial) {
-                } else if (state is BillingError) {
+                if (state is BillingError) {
                   CustomSnackbar.show(context, state.message, type: SnackBarType.error);
                 } else if (state is AddSuccess) {
                   CustomSnackbar.show(context, 'Bill created', type: SnackBarType.success);

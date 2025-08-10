@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
@@ -32,7 +33,9 @@ class _TenantsPageState extends State<TenantsPage> {
   void initState() {
     super.initState();
     authBloc = context.read<AuthBloc>();
+    authBloc.add(CheckAuthStatus());
     tenantBloc = context.read<TenantBloc>();
+    tenantBloc.add(LoadTenants());
   }
 
   Future<void> _showTenantDialog({Tenant? tenant, required List<Room> rooms}) async {

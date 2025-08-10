@@ -13,6 +13,7 @@ class CustomTextFormField extends StatelessWidget {
   final Widget? suffixIcon;
   final void Function(String)? onFieldSubmitted;
   final bool obscureText;
+  final int errorMaxLines;
 
   const CustomTextFormField({
     super.key,
@@ -28,6 +29,7 @@ class CustomTextFormField extends StatelessWidget {
     this.suffixIcon,
     this.onFieldSubmitted,
     this.obscureText = false,
+    this.errorMaxLines = 2,
   });
 
   @override
@@ -44,11 +46,7 @@ class CustomTextFormField extends StatelessWidget {
       enabled: enabled,
       onFieldSubmitted: onFieldSubmitted,
       obscureText: obscureText,
-      decoration: InputDecoration(
-        labelText: labelText,
-        prefixIcon: prefixIcon,
-        suffixIcon: suffixIcon,
-      ),
+      decoration: InputDecoration(labelText: labelText, prefixIcon: prefixIcon, suffixIcon: suffixIcon, errorMaxLines: errorMaxLines),
       style: theme.textTheme.bodyMedium,
     );
   }
