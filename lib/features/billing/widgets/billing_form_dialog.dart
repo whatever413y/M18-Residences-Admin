@@ -1,13 +1,12 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
 import 'package:rental_management_system_flutter/models/reading.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
 import 'package:rental_management_system_flutter/services/billing_service.dart';
-import 'package:rental_management_system_flutter/utils/custom_dropdown_form.dart';
 import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
 import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
+import 'package:rental_management_system_flutter/utils/shared_widgets.dart';
 
 class AdditionalChargeInput {
   int amount;
@@ -24,6 +23,7 @@ class BillingFormDialog extends StatefulWidget {
   final BillingService billingService;
   final int? selectedRoomId;
   final int? selectedTenantId;
+  final bool showActiveOnly;
 
   const BillingFormDialog({
     super.key,
@@ -32,8 +32,9 @@ class BillingFormDialog extends StatefulWidget {
     required this.tenants,
     required this.readings,
     required this.billingService,
-    this.selectedRoomId,
-    this.selectedTenantId,
+    required this.showActiveOnly,
+    required this.selectedRoomId,
+    required this.selectedTenantId,
   });
 
   @override
@@ -281,23 +282,15 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   }
 
   Widget _buildRoomDropdown() {
-    return CustomDropdownForm<int?>(
-      label: 'Select Room',
-      value: _selectedRoomId,
-      items: [
-        const DropdownMenuItem<int?>(value: null, child: Text('All Rooms')),
-        ...widget.rooms.map((room) => DropdownMenuItem<int?>(value: room.id, child: Text(room.name))),
-      ],
-      onChanged: (value) {
+    return buildRoomFilter(
+      rooms: widget.rooms,
+      tenants: widget.tenants,
+      selectedRoomId: _selectedRoomId,
+      selectedTenantId: _selectedTenantId,
+      onFilterChanged: (roomId, tenantId) {
         setState(() {
-          _selectedRoomId = value;
-
-          if (_selectedTenantId != null) {
-            final tenant = widget.tenants.firstWhereOrNull((t) => t.id == _selectedTenantId);
-            if (tenant == null || tenant.roomId != _selectedRoomId) {
-              _selectedTenantId = null;
-            }
-          }
+          _selectedRoomId = roomId;
+          _selectedTenantId = tenantId;
           _updateCharges();
         });
       },
@@ -305,30 +298,20 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   }
 
   Widget _buildTenantDropdown() {
-    return CustomDropdownForm<int?>(
+    return buildTenantFilter(
       label: 'Select Tenant',
-      hint: 'Choose a tenant',
-      value: _selectedTenantId,
-      items: [
-        const DropdownMenuItem<int?>(value: null, enabled: false, child: Text('Choose a tenant')),
-        ...widget.tenants
-            .where((t) => _selectedRoomId == null || t.roomId == _selectedRoomId)
-            .map((tenant) => DropdownMenuItem<int?>(value: tenant.id, child: Text(tenant.name))),
-      ],
-      onChanged: (value) {
+      tenants: widget.tenants,
+      readings: widget.readings,
+      selectedRoomId: _selectedRoomId,
+      selectedTenantId: _selectedTenantId,
+      showActiveOnly: widget.showActiveOnly,
+      onFilterChanged: (tenantId, roomId) {
         setState(() {
-          _selectedTenantId = value;
-
-          if (_selectedTenantId != null) {
-            final tenantRoomId = widget.tenants.firstWhere((t) => t.id == _selectedTenantId).roomId;
-            if (_selectedRoomId != tenantRoomId) {
-              _selectedRoomId = tenantRoomId;
-            }
-          }
+          _selectedTenantId = tenantId;
+          _selectedRoomId = roomId;
           _updateCharges();
         });
       },
-      validator: (value) => value == null ? 'Please choose a tenant' : null,
     );
   }
 

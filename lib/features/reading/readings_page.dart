@@ -18,7 +18,6 @@ import 'package:rental_management_system_flutter/theme.dart';
 import 'package:rental_management_system_flutter/utils/confirmation_action.dart';
 import 'package:rental_management_system_flutter/utils/custom_add_button.dart';
 import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
-import 'package:rental_management_system_flutter/utils/custom_dropdown_form.dart';
 import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
 import 'package:rental_management_system_flutter/utils/error_widget.dart';
 import 'package:rental_management_system_flutter/utils/shared_widgets.dart';
@@ -84,6 +83,7 @@ class ReadingsPageState extends State<ReadingsPage> {
       context: context,
       builder:
           (context) => ReadingFormDialog(
+            showActiveOnly: _showActiveOnly,
             selectedRoomId: _filterRoomId,
             selectedTenantId: _filterTenantId,
             reading: reading,
@@ -124,7 +124,6 @@ class ReadingsPageState extends State<ReadingsPage> {
     );
   }
 
-  @override
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.lightTheme;
@@ -254,70 +253,41 @@ class ReadingsPageState extends State<ReadingsPage> {
   }
 
   Widget _buildRoomFilter(List<Room> rooms, List<Tenant> tenants) {
-    return CustomDropdownForm<int>(
-      label: 'Filter by Room',
-      items: [
-        DropdownMenuItem(value: null, child: Text('All Rooms')),
-        ...rooms.map((room) => DropdownMenuItem(value: room.id, child: Text(room.name))),
-      ],
-      value: _filterRoomId,
-      onChanged: (value) {
+    return buildRoomFilter(
+      rooms: rooms,
+      tenants: tenants,
+      selectedRoomId: _filterRoomId,
+      selectedTenantId: _filterTenantId,
+      onFilterChanged: (roomId, tenantId) {
         setState(() {
-          _filterRoomId = value;
-          if (_filterRoomId == null) {
-            _filterTenantId = null;
-          } else if (_filterTenantId != null) {
-            final tenant = _findTenantById(tenants, _filterTenantId!);
-            if (tenant == null || tenant.roomId != _filterRoomId) {
-              _filterTenantId = null;
-            }
-          }
+          _filterRoomId = roomId;
+          _filterTenantId = tenantId;
         });
       },
     );
   }
 
   Widget _buildTenantFilter(List<Tenant> tenants, List<Reading> readings) {
-    final filteredTenants =
-        tenants.where((t) {
-          final matchesRoom = _filterRoomId == null || t.roomId == _filterRoomId;
-          final matchesActive = !_showActiveOnly || (t.isActive);
-          return matchesRoom && matchesActive;
-        }).toList();
-
-    return CustomDropdownForm<int>(
-      label: 'Filter by Tenant',
-      hint: 'Choose a tenant',
-      items: [
-        const DropdownMenuItem(value: null, enabled: false, child: Text('Choose a tenant')),
-        ...filteredTenants.map((tenant) => DropdownMenuItem(value: tenant.id, child: Text(tenant.name))),
-      ],
-      value: _filterTenantId,
-      onChanged: (value) {
+    return buildTenantFilter(
+      tenants: tenants,
+      readings: readings,
+      selectedRoomId: _filterRoomId,
+      selectedTenantId: _filterTenantId,
+      showActiveOnly: _showActiveOnly,
+      onFilterChanged: (tenantId, roomId) {
         setState(() {
-          _filterTenantId = value;
-          if (value != null) {
-            final tenant = tenants.firstWhere((t) => t.id == value);
-            if (_filterRoomId != tenant.roomId) {
-              _filterRoomId = tenant.roomId;
-            }
-          }
+          _filterTenantId = tenantId;
+          _filterRoomId = roomId;
         });
       },
     );
   }
 
   Widget _buildYearFilter(List<Reading> readings) {
-    final years = readings.map((b) => b.createdAt!.year).toSet().toList()..sort();
-
-    return CustomDropdownForm<int>(
-      label: 'Filter by Year',
-      items: [
-        const DropdownMenuItem(value: null, child: Text('All Years')),
-        ...years.map((year) => DropdownMenuItem(value: year, child: Text(year.toString()))),
-      ],
-      value: _filterYear,
-      onChanged: (val) {
+    return buildYearFilter(
+      readings: readings,
+      selectedYear: _filterYear,
+      onYearChanged: (val) {
         setState(() {
           _filterYear = val;
         });
@@ -326,19 +296,10 @@ class ReadingsPageState extends State<ReadingsPage> {
   }
 
   Widget _buildMonthFilter(List<Reading> readings) {
-    final months = readings.map((b) => b.createdAt!.month).toSet().toList()..sort();
-
-    return CustomDropdownForm<int>(
-      label: 'Filter by Month',
-      items: [
-        const DropdownMenuItem(value: null, child: Text('All Months')),
-        ...months.map((month) {
-          final monthName = DateFormat.MMMM().format(DateTime(0, month));
-          return DropdownMenuItem(value: month, child: Text(monthName));
-        }),
-      ],
-      value: _filterMonth,
-      onChanged: (val) {
+    return buildMonthFilter(
+      readings: readings,
+      selectedMonth: _filterMonth,
+      onMonthChanged: (val) {
         setState(() {
           _filterMonth = val;
         });
