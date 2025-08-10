@@ -21,6 +21,7 @@ import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
 import 'package:rental_management_system_flutter/utils/custom_dropdown_form.dart';
 import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
 import 'package:rental_management_system_flutter/utils/error_widget.dart';
+import 'package:rental_management_system_flutter/utils/shared_widgets.dart';
 
 class ReadingsPage extends StatefulWidget {
   const ReadingsPage({super.key});
@@ -33,6 +34,7 @@ class ReadingsPageState extends State<ReadingsPage> {
   late AuthBloc authBloc;
   late ReadingBloc readingBloc;
   final DateFormat _dateFormat = DateFormat('MMM d, yyyy');
+  bool _showActiveOnly = true;
 
   int? _filterRoomId;
   int? _filterTenantId;
@@ -139,6 +141,18 @@ class ReadingsPageState extends State<ReadingsPage> {
           onRefresh: () {
             readingBloc.add(LoadReadings());
           },
+          actions: [
+            buildActiveToggleFilter(
+              showActiveOnly: _showActiveOnly,
+              onChanged: (val) {
+                setState(() {
+                  _showActiveOnly = val;
+                  readingBloc.add(LoadReadings());
+                });
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
         ),
         body: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, authState) {
@@ -182,7 +196,7 @@ class ReadingsPageState extends State<ReadingsPage> {
                                 children: [
                                   _buildRoomFilter(state.rooms, state.tenants),
                                   const SizedBox(height: 12),
-                                  _buildTenantFilter(state.tenants),
+                                  _buildTenantFilter(state.tenants, state.readings),
                                   const SizedBox(height: 12),
                                   _buildYearFilter(state.readings),
                                   const SizedBox(height: 12),
@@ -195,7 +209,7 @@ class ReadingsPageState extends State<ReadingsPage> {
                                 children: [
                                   Expanded(child: _buildRoomFilter(state.rooms, state.tenants)),
                                   const SizedBox(width: 12),
-                                  Expanded(child: _buildTenantFilter(state.tenants)),
+                                  Expanded(child: _buildTenantFilter(state.tenants, state.readings)),
                                   const SizedBox(width: 12),
                                   Expanded(child: _buildYearFilter(state.readings)),
                                   const SizedBox(width: 12),
@@ -263,14 +277,19 @@ class ReadingsPageState extends State<ReadingsPage> {
     );
   }
 
-  Widget _buildTenantFilter(List<Tenant> tenants) {
-    final filteredTenants = tenants.where((t) => _filterRoomId == null || t.roomId == _filterRoomId).toList();
+  Widget _buildTenantFilter(List<Tenant> tenants, List<Reading> readings) {
+    final filteredTenants =
+        tenants.where((t) {
+          final matchesRoom = _filterRoomId == null || t.roomId == _filterRoomId;
+          final matchesActive = !_showActiveOnly || (t.isActive);
+          return matchesRoom && matchesActive;
+        }).toList();
 
     return CustomDropdownForm<int>(
       label: 'Filter by Tenant',
       hint: 'Choose a tenant',
       items: [
-        DropdownMenuItem(value: null, enabled: false, child: Text('Choose a tenant')),
+        const DropdownMenuItem(value: null, enabled: false, child: Text('Choose a tenant')),
         ...filteredTenants.map((tenant) => DropdownMenuItem(value: tenant.id, child: Text(tenant.name))),
       ],
       value: _filterTenantId,
@@ -328,7 +347,19 @@ class ReadingsPageState extends State<ReadingsPage> {
   }
 
   Widget _buildReadingsTable(List<Reading> readings, List<Room> rooms, List<Tenant> tenants) {
-    if (readings.isEmpty) {
+    final filteredReadings =
+        readings.where((reading) {
+          if (!_showActiveOnly) return true;
+
+          try {
+            final tenant = tenants.firstWhere((t) => t.id == reading.tenantId);
+            return tenant.isActive;
+          } catch (e) {
+            return false;
+          }
+        }).toList();
+
+    if (filteredReadings.isEmpty) {
       return const Center(child: Text('No readings found for the selected filters.'));
     }
 
@@ -346,7 +377,7 @@ class ReadingsPageState extends State<ReadingsPage> {
           DataColumn(label: Text('Actions')),
         ],
         rows:
-            readings.map((reading) {
+            filteredReadings.map((reading) {
               return DataRow(
                 onSelectChanged: (_) => _showReadingDetailsDialog(reading, rooms, tenants),
                 cells: [

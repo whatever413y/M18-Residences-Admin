@@ -22,6 +22,7 @@ import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
 import 'package:rental_management_system_flutter/utils/custom_dropdown_form.dart';
 import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
 import 'package:rental_management_system_flutter/utils/error_widget.dart';
+import 'package:rental_management_system_flutter/utils/shared_widgets.dart';
 
 class BillingsPage extends StatefulWidget {
   @override
@@ -32,6 +33,7 @@ class BillingsPageState extends State<BillingsPage> {
   late AuthBloc authBloc;
   late BillingBloc billingBloc;
   final DateFormat _dateFormat = DateFormat('MMM d, yyyy');
+  bool _showActiveOnly = true;
 
   int? _filterRoomId;
   int? _filterTenantId;
@@ -159,6 +161,18 @@ class BillingsPageState extends State<BillingsPage> {
           onRefresh: () {
             billingBloc.add(LoadBills());
           },
+          actions: [
+            buildActiveToggleFilter(
+              showActiveOnly: _showActiveOnly,
+              onChanged: (val) {
+                setState(() {
+                  _showActiveOnly = val;
+                  billingBloc.add(LoadBills());
+                });
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
         ),
         body: BlocBuilder<AuthBloc, AuthState>(
           buildWhen: (previous, current) => previous.runtimeType != current.runtimeType,
@@ -206,7 +220,7 @@ class BillingsPageState extends State<BillingsPage> {
                                 children: [
                                   _buildRoomFilter(rooms, tenants),
                                   const SizedBox(height: 12),
-                                  _buildTenantFilter(tenants),
+                                  _buildTenantFilter(tenants, readings),
                                   const SizedBox(height: 12),
                                   _buildYearFilter(state.bills),
                                   const SizedBox(height: 12),
@@ -218,7 +232,7 @@ class BillingsPageState extends State<BillingsPage> {
                                 children: [
                                   Expanded(child: _buildRoomFilter(rooms, tenants)),
                                   const SizedBox(width: 12),
-                                  Expanded(child: _buildTenantFilter(tenants)),
+                                  Expanded(child: _buildTenantFilter(tenants, readings)),
                                   const SizedBox(width: 12),
                                   Expanded(child: _buildYearFilter(state.bills)),
                                   const SizedBox(width: 12),
@@ -288,13 +302,19 @@ class BillingsPageState extends State<BillingsPage> {
     );
   }
 
-  Widget _buildTenantFilter(List<Tenant> tenants) {
+  Widget _buildTenantFilter(List<Tenant> tenants, List<Reading> readings) {
+    final filteredTenants =
+        tenants.where((t) {
+          final matchesRoom = _filterRoomId == null || t.roomId == _filterRoomId;
+          final matchesActive = !_showActiveOnly || (t.isActive);
+          return matchesRoom && matchesActive;
+        }).toList();
     return CustomDropdownForm<int>(
       label: 'Filter by Tenant',
       hint: 'Choose a tenant',
       items: [
-        DropdownMenuItem(value: null, enabled: false, child: Text('Choose a tenant')),
-        ...tenants.map((tenant) => DropdownMenuItem(value: tenant.id, child: Text(tenant.name))),
+        const DropdownMenuItem(value: null, enabled: false, child: Text('Choose a tenant')),
+        ...filteredTenants.map((tenant) => DropdownMenuItem(value: tenant.id, child: Text(tenant.name))),
       ],
       value: _filterTenantId,
       onChanged: (value) {
@@ -352,8 +372,19 @@ class BillingsPageState extends State<BillingsPage> {
 
   Widget _buildBillingsTable({required List<Bill> bills, required List<Room> rooms, required List<Tenant> tenants, required List<Reading> readings}) {
     final currencyFormat = NumberFormat.currency(locale: 'en_PH', symbol: '₱', decimalDigits: 0);
+    final filteredBills =
+        bills.where((bill) {
+          if (!_showActiveOnly) return true;
 
-    if (bills.isEmpty) {
+          try {
+            final tenant = tenants.firstWhere((t) => t.id == bill.tenantId);
+            return tenant.isActive;
+          } catch (e) {
+            return false;
+          }
+        }).toList();
+
+    if (filteredBills.isEmpty) {
       return const Center(child: Text('No bills found'));
     }
 
@@ -374,7 +405,7 @@ class BillingsPageState extends State<BillingsPage> {
           DataColumn(label: Text('Actions')),
         ],
         rows:
-            bills.map((bill) {
+            filteredBills.map((bill) {
               final tenant = _findTenantById(tenants, bill.tenantId);
               final room = tenant != null ? _findRoomById(rooms, tenant.roomId) : null;
 
