@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
 import 'package:rental_management_system_flutter/models/reading.dart';
@@ -30,17 +31,20 @@ class BillingsPage extends StatefulWidget {
 class BillingsPageState extends State<BillingsPage> {
   late AuthBloc authBloc;
   late BillingBloc billingBloc;
-  final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
+  final DateFormat _dateFormat = DateFormat('MMM d, yyyy');
 
   int? _filterRoomId;
   int? _filterTenantId;
   int? _filterYear;
+  int? _filterMonth;
 
   BillingService get _billingService => context.read<BillingBloc>().billingService;
 
   @override
   void initState() {
     super.initState();
+    authBloc = context.read<AuthBloc>();
+    authBloc.add(CheckAuthStatus());
     billingBloc = context.read<BillingBloc>();
     billingBloc.add(LoadBills());
   }
@@ -158,7 +162,8 @@ class BillingsPageState extends State<BillingsPage> {
             }
             return BlocListener<BillingBloc, BillingState>(
               listener: (context, state) {
-                if (state is BillingError) {
+                if (state is BillingLoading || state is BillingInitial) {
+                } else if (state is BillingError) {
                   CustomSnackbar.show(context, state.message, type: SnackBarType.error);
                 } else if (state is AddSuccess) {
                   CustomSnackbar.show(context, 'Bill created', type: SnackBarType.success);
@@ -199,6 +204,8 @@ class BillingsPageState extends State<BillingsPage> {
                                     _buildTenantFilter(tenants),
                                     const SizedBox(height: 12),
                                     _buildYearFilter(state.bills),
+                                    const SizedBox(height: 12),
+                                    _buildMonthFilter(state.bills),
                                   ],
                                 )
                                 : Row(
@@ -208,6 +215,8 @@ class BillingsPageState extends State<BillingsPage> {
                                     Expanded(child: _buildTenantFilter(tenants)),
                                     const SizedBox(width: 12),
                                     Expanded(child: _buildYearFilter(state.bills)),
+                                    const SizedBox(width: 12),
+                                    Expanded(child: _buildMonthFilter(state.bills)),
                                   ],
                                 ),
                             const SizedBox(height: 12),
@@ -303,7 +312,29 @@ class BillingsPageState extends State<BillingsPage> {
     );
   }
 
+  Widget _buildMonthFilter(List<Bill> bills) {
+    final months = bills.map((b) => b.createdAt!.month).toSet().toList()..sort();
+
+    return CustomDropdownForm<int>(
+      label: 'Filter by Month',
+      items: [
+        const DropdownMenuItem(value: null, child: Text('All Months')),
+        ...months.map((month) {
+          final monthName = DateFormat.MMMM().format(DateTime(0, month));
+          return DropdownMenuItem(value: month, child: Text(monthName));
+        }),
+      ],
+      value: _filterMonth,
+      onChanged: (val) {
+        setState(() {
+          _filterMonth = val;
+        });
+      },
+    );
+  }
+
   Widget _buildBillingsTable({required List<Bill> bills, required List<Room> rooms, required List<Tenant> tenants, required List<Reading> readings}) {
+    final currencyFormat = NumberFormat.currency(locale: 'en_PH', symbol: '₱', decimalDigits: 0);
     if (bills.isEmpty) {
       return const Expanded(child: Center(child: Text('No bills found')));
     }
@@ -316,12 +347,12 @@ class BillingsPageState extends State<BillingsPage> {
           columns: const [
             DataColumn(label: Text('Room')),
             DataColumn(label: Text('Tenant')),
-            DataColumn(label: Text('Consumption')),
-            DataColumn(label: Text('Electric Charges')),
-            DataColumn(label: Text('Room Charges')),
-            DataColumn(label: Text('Additional')),
+            DataColumn(label: Text('Consumption (kWh)')),
+            DataColumn(label: Text('Electric Charges (₱)')),
+            DataColumn(label: Text('Room Charges (₱)')),
+            DataColumn(label: Text('Additional Charges (₱)')),
             DataColumn(label: Text('Notes')),
-            DataColumn(label: Text('Total')),
+            DataColumn(label: Text('Total (₱)')),
             DataColumn(label: Text('Date')),
             DataColumn(label: Text('Actions')),
           ],
@@ -335,12 +366,15 @@ class BillingsPageState extends State<BillingsPage> {
                   cells: [
                     DataCell(Text(room?.name ?? '-')),
                     DataCell(Text(tenant?.name ?? '-')),
-                    DataCell(Text(_getLatestReading(readings, tenant?.roomId ?? 0, bill.tenantId)?.consumption.toString() ?? '0')),
-                    DataCell(Text(bill.electricCharges.toString())),
-                    DataCell(Text(bill.roomCharges.toString())),
-                    DataCell(Text(bill.additionalCharges?.toString() ?? '-')),
+                    DataCell(Text('${_getLatestReading(readings, tenant?.roomId ?? 0, bill.tenantId)?.consumption}')),
+                    DataCell(Text(currencyFormat.format(bill.electricCharges))),
+                    DataCell(Text(currencyFormat.format(bill.roomCharges))),
+                    DataCell(
+                      Text((bill.additionalCharges != null && bill.additionalCharges != 0) ? currencyFormat.format(bill.additionalCharges!) : '-'),
+                    ),
+
                     DataCell(Text(bill.additionalDescription?.isNotEmpty == true ? bill.additionalDescription! : '-')),
-                    DataCell(Text(bill.totalAmount.toString())),
+                    DataCell(Text(currencyFormat.format(bill.totalAmount))),
                     DataCell(Text(_dateFormat.format(bill.createdAt!))),
                     DataCell(
                       Row(

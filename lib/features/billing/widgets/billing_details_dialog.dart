@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
 
 class BillingDetailsDialog extends StatelessWidget {
@@ -23,9 +24,7 @@ class BillingDetailsDialog extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 400),
         child: Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 12,
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -49,14 +48,7 @@ class BillingDetailsDialog extends StatelessWidget {
   }
 
   Widget _buildTitle() {
-    return Text(
-      'Billing Details',
-      style: TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.bold,
-        color: Colors.blue.shade800,
-      ),
-    );
+    return Text('Billing Details', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue.shade800));
   }
 
   Widget _buildDivider() {
@@ -64,6 +56,7 @@ class BillingDetailsDialog extends StatelessWidget {
   }
 
   Widget _buildDetails() {
+    final currencyFormat = NumberFormat.currency(locale: 'en_PH', symbol: '₱', decimalDigits: 0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -73,21 +66,18 @@ class BillingDetailsDialog extends StatelessWidget {
         const SizedBox(height: 12),
         _buildDetailRow('Consumption', '$consumption kWh'),
         const SizedBox(height: 12),
-        _buildDetailRow('Electric Charges', '₱${bill.electricCharges}'),
+        _buildDetailRow('Electric Charges', currencyFormat.format(bill.electricCharges)),
         const SizedBox(height: 12),
-        _buildDetailRow('Room Charges', '₱${bill.roomCharges}'),
-        if (bill.additionalCharges! > 0) ...[
+        _buildDetailRow('Room Charges', currencyFormat.format(bill.roomCharges)),
+        if (bill.additionalCharges != null && bill.additionalCharges != 0) ...[
           const SizedBox(height: 12),
-          _buildDetailRow('Additional Charges', '₱${bill.additionalCharges}'),
+          _buildDetailRow(bill.additionalCharges! < 0 ? 'Discount' : 'Additional Charges', currencyFormat.format(bill.additionalCharges!.abs())),
         ],
-        if ((bill.additionalDescription ?? '').isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _buildDetailRow('Notes', bill.additionalDescription!),
-        ],
+        if ((bill.additionalDescription ?? '').isNotEmpty) ...[const SizedBox(height: 12), _buildDetailRow('Notes', bill.additionalDescription!)],
         const SizedBox(height: 12),
         _buildDivider(),
         const SizedBox(height: 12),
-        _buildDetailRow('Total Amount', '₱${bill.totalAmount}'),
+        _buildDetailRow('Total Amount', currencyFormat.format(bill.totalAmount)),
         const SizedBox(height: 12),
         _buildDetailRow('Date', date),
       ],
@@ -100,13 +90,7 @@ class BillingDetailsDialog extends StatelessWidget {
       children: [
         Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(width: 16),
-        Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: const TextStyle(fontWeight: FontWeight.w400),
-          ),
-        ),
+        Expanded(child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w400))),
       ],
     );
   }
@@ -121,10 +105,7 @@ class BillingDetailsDialog extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text(
-          'Close',
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
+        child: const Text('Close', style: TextStyle(color: Colors.white, fontSize: 16)),
       ),
     );
   }

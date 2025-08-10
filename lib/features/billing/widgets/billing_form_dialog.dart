@@ -80,10 +80,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     if (roomId == null || tenantId == null) return null;
 
     final readings =
-        widget.readings
-            .where((r) => r.roomId == roomId && r.tenantId == tenantId)
-            .toList()
-          ..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+        widget.readings.where((r) => r.roomId == roomId && r.tenantId == tenantId).toList()..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
 
     return readings.isNotEmpty ? readings.first : null;
   }
@@ -95,15 +92,11 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       return;
     }
 
-    final room = widget.rooms.firstWhere(
-      (r) => r.id == _selectedRoomId,
-      orElse: () => Room(id: 0, name: '', rent: 0),
-    );
+    final room = widget.rooms.firstWhere((r) => r.id == _selectedRoomId, orElse: () => Room(id: 0, name: '', rent: 0));
 
     final roomCharges = room.rent.toInt();
 
-    final electricConsumption =
-        _getLatestReading(_selectedRoomId, _selectedTenantId)?.consumption ?? 0;
+    final electricConsumption = _getLatestReading(_selectedRoomId, _selectedTenantId)?.consumption ?? 0;
 
     final electricCharges = electricConsumption * electricityRate;
 
@@ -117,11 +110,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     final reading = _getLatestReading(_selectedRoomId, _selectedTenantId);
     if (reading == null) {
       if (context.mounted) {
-        CustomSnackbar.show(
-          context,
-          'No reading found for this tenant',
-          type: SnackBarType.error,
-        );
+        CustomSnackbar.show(context, 'No reading found for this tenant', type: SnackBarType.error);
       }
       return;
     }
@@ -169,10 +158,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
 
   List<Widget> _buildActions(BuildContext context, bool isEditing) {
     return [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
-      ),
+      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
       ElevatedButton(
         onPressed: _submit,
         style: ElevatedButton.styleFrom(
@@ -190,19 +176,14 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       value: _selectedRoomId,
       items: [
         const DropdownMenuItem<int?>(value: null, child: Text('All Rooms')),
-        ...widget.rooms.map(
-          (room) =>
-              DropdownMenuItem<int?>(value: room.id, child: Text(room.name)),
-        ),
+        ...widget.rooms.map((room) => DropdownMenuItem<int?>(value: room.id, child: Text(room.name))),
       ],
       onChanged: (value) {
         setState(() {
           _selectedRoomId = value;
 
           if (_selectedTenantId != null) {
-            final tenant = widget.tenants.firstWhereOrNull(
-              (t) => t.id == _selectedTenantId,
-            );
+            final tenant = widget.tenants.firstWhereOrNull((t) => t.id == _selectedTenantId);
             if (tenant == null || tenant.roomId != _selectedRoomId) {
               _selectedTenantId = null;
             }
@@ -219,31 +200,17 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       hint: 'Choose a tenant',
       value: _selectedTenantId,
       items: [
-        const DropdownMenuItem<int?>(
-          value: null,
-          enabled: false,
-          child: Text('Choose a tenant'),
-        ),
+        const DropdownMenuItem<int?>(value: null, enabled: false, child: Text('Choose a tenant')),
         ...widget.tenants
-            .where(
-              (t) => _selectedRoomId == null || t.roomId == _selectedRoomId,
-            )
-            .map(
-              (tenant) => DropdownMenuItem<int?>(
-                value: tenant.id,
-                child: Text(tenant.name),
-              ),
-            ),
+            .where((t) => _selectedRoomId == null || t.roomId == _selectedRoomId)
+            .map((tenant) => DropdownMenuItem<int?>(value: tenant.id, child: Text(tenant.name))),
       ],
       onChanged: (value) {
         setState(() {
           _selectedTenantId = value;
 
           if (_selectedTenantId != null) {
-            final tenantRoomId =
-                widget.tenants
-                    .firstWhere((t) => t.id == _selectedTenantId)
-                    .roomId;
+            final tenantRoomId = widget.tenants.firstWhere((t) => t.id == _selectedTenantId).roomId;
             if (_selectedRoomId != tenantRoomId) {
               _selectedRoomId = tenantRoomId;
             }
@@ -262,14 +229,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       enabled: false,
       prefixIcon: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Text(
-          '₱',
-          style: TextStyle(
-            color: Theme.of(context).primaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -281,14 +241,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       enabled: false,
       prefixIcon: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Text(
-          '₱',
-          style: TextStyle(
-            color: Theme.of(context).primaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -297,23 +250,16 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     return CustomTextFormField(
       controller: _additionalChargesController,
       labelText: 'Additional Charges',
-      keyboardType: TextInputType.number,
+      keyboardType: const TextInputType.numberWithOptions(signed: true),
       prefixIcon: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Text(
-          '₱',
-          style: TextStyle(
-            color: Theme.of(context).primaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) return null;
 
         final parsed = int.tryParse(value);
-        if (parsed == null || parsed < 0) {
+        if (parsed == null) {
           return 'Enter a valid number';
         }
         return null;

@@ -64,7 +64,9 @@ class LoginPageState extends State<LoginPage> {
             } else if (state is Authenticated) {
               _usernameController.clear();
               _passwordController.clear();
-              _navigateToPage(HomePage());
+              if (Navigator.of(context).canPop() == false) {
+                _navigateToPage(HomePage());
+              }
             }
           },
           child: Container(

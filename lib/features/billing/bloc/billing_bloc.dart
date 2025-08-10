@@ -69,7 +69,6 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
   }
 
   Future<void> _onDeleteBill(DeleteBill event, Emitter<BillingState> emit) async {
-    if (state is! BillingLoaded) return;
     try {
       await billingService.deleteBill(event.id);
       event.onComplete.complete();
