@@ -8,8 +8,9 @@ import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
 class TenantFormDialog extends StatefulWidget {
   final Tenant? tenant;
   final List<Room> rooms;
+  final bool? isEditing;
 
-  const TenantFormDialog({super.key, this.tenant, required this.rooms});
+  const TenantFormDialog({super.key, this.tenant, required this.rooms, this.isEditing});
 
   @override
   State<TenantFormDialog> createState() => _TenantFormDialogState();
@@ -20,14 +21,18 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
   final _nameController = TextEditingController();
   String? _selectedRoomId;
   DateTime? _selectedJoinDate;
+  bool? _isActive;
+  bool? _isEditing;
   final _dateFormat = DateFormat('MMMM d, y');
 
   @override
   void initState() {
     super.initState();
+    _isEditing = widget.isEditing ?? false;
     _nameController.text = widget.tenant?.name ?? '';
     _selectedRoomId = widget.tenant?.roomId.toString();
     _selectedJoinDate = widget.tenant?.joinDate;
+    _isActive = widget.tenant?.isActive ?? true;
   }
 
   @override
@@ -41,21 +46,16 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
     final name = _nameController.text.trim();
     final roomId = int.parse(_selectedRoomId!);
     final joinDate = _selectedJoinDate!;
+    final isActive = _isActive;
 
-    Navigator.of(
-      context,
-    ).pop({'name': name, 'roomId': roomId, 'joinDate': joinDate});
+    Navigator.of(context).pop({'name': name, 'roomId': roomId, 'joinDate': joinDate, 'isActive': isActive});
   }
 
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.tenant != null;
 
-    return AlertDialog(
-      title: _buildTitle(isEditing),
-      content: _buildContent(),
-      actions: _buildActions(context, isEditing),
-    );
+    return AlertDialog(title: _buildTitle(isEditing), content: _buildContent(), actions: _buildActions(context, isEditing));
   }
 
   Widget _buildContent() {
@@ -64,6 +64,7 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (_isEditing!) ...[_buildActiveToggle(), const SizedBox(height: 12)],
           _buildNameField(),
           const SizedBox(height: 12),
           _buildRoomDropdown(),
@@ -71,6 +72,19 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
           _buildJoinDatePicker(context),
         ],
       ),
+    );
+  }
+
+  Widget _buildActiveToggle() {
+    return SwitchListTile(
+      title: Text(_isActive! ? 'Active' : 'Inactive'),
+      value: _isActive!,
+      onChanged: (val) {
+        setState(() {
+          _isActive = val;
+        });
+      },
+      activeColor: Theme.of(context).primaryColor,
     );
   }
 
@@ -83,9 +97,7 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
       controller: _nameController,
       labelText: 'Tenant',
       textInputAction: TextInputAction.next,
-      validator:
-          (value) =>
-              (value == null || value.trim().isEmpty) ? 'Enter tenant' : null,
+      validator: (value) => (value == null || value.trim().isEmpty) ? 'Enter tenant' : null,
       prefixIcon: Icon(Icons.person, color: Theme.of(context).primaryColor),
     );
   }
@@ -94,40 +106,22 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
     return CustomDropdownForm<String>(
       label: 'Room',
       value: _selectedRoomId,
-      items:
-          widget.rooms
-              .map(
-                (room) => DropdownMenuItem(
-                  value: room.id.toString(),
-                  child: Text(room.name),
-                ),
-              )
-              .toList(),
+      items: widget.rooms.map((room) => DropdownMenuItem(value: room.id.toString(), child: Text(room.name))).toList(),
       onChanged: (value) => setState(() => _selectedRoomId = value),
-      validator:
-          (value) =>
-              value == null || value.isEmpty ? 'Please select a room' : null,
+      validator: (value) => value == null || value.isEmpty ? 'Please select a room' : null,
     );
   }
 
   Widget _buildJoinDatePicker(BuildContext context) {
     return FormField<DateTime>(
-      validator:
-          (value) =>
-              _selectedJoinDate == null ? 'Please pick a join date' : null,
+      validator: (value) => _selectedJoinDate == null ? 'Please pick a join date' : null,
       builder: (formFieldState) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(
-                    _selectedJoinDate == null
-                        ? 'Select Join Date'
-                        : 'Joined: ${_dateFormat.format(_selectedJoinDate!)}',
-                  ),
-                ),
+                Expanded(child: Text(_selectedJoinDate == null ? 'Select Join Date' : 'Joined: ${_dateFormat.format(_selectedJoinDate!)}')),
                 TextButton(
                   onPressed: () async {
                     final now = DateTime.now();
@@ -151,13 +145,7 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
             if (formFieldState.hasError)
               Padding(
                 padding: const EdgeInsets.only(top: 6, left: 10),
-                child: Text(
-                  formFieldState.errorText!,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                    fontSize: 12,
-                  ),
-                ),
+                child: Text(formFieldState.errorText!, style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12)),
               ),
           ],
         );
@@ -167,10 +155,7 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
 
   List<Widget> _buildActions(BuildContext context, bool isEditing) {
     return [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
-      ),
+      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
       ElevatedButton(
         onPressed: _submit,
         style: ElevatedButton.styleFrom(

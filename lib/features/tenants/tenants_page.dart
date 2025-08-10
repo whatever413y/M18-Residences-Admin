@@ -17,6 +17,7 @@ import 'package:rental_management_system_flutter/utils/custom_add_button.dart';
 import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
 import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
 import 'package:rental_management_system_flutter/utils/error_widget.dart';
+import 'package:rental_management_system_flutter/utils/shared_widgets.dart';
 
 class TenantsPage extends StatefulWidget {
   const TenantsPage({super.key});
@@ -28,6 +29,7 @@ class TenantsPage extends StatefulWidget {
 class _TenantsPageState extends State<TenantsPage> {
   late AuthBloc authBloc;
   late TenantBloc tenantBloc;
+  bool _showActiveOnly = true;
 
   @override
   void initState() {
@@ -38,8 +40,11 @@ class _TenantsPageState extends State<TenantsPage> {
     tenantBloc.add(LoadTenants());
   }
 
-  Future<void> _showTenantDialog({Tenant? tenant, required List<Room> rooms}) async {
-    final result = await showDialog<Map<String, dynamic>?>(context: context, builder: (_) => TenantFormDialog(tenant: tenant, rooms: rooms));
+  Future<void> _showTenantDialog({Tenant? tenant, required List<Room> rooms, bool isEditing = false}) async {
+    final result = await showDialog<Map<String, dynamic>?>(
+      context: context,
+      builder: (_) => TenantFormDialog(tenant: tenant, rooms: rooms, isEditing: isEditing),
+    );
 
     if (!mounted) return;
     if (result == null) return;
@@ -49,6 +54,7 @@ class _TenantsPageState extends State<TenantsPage> {
       name: result['name'] as String,
       roomId: result['roomId'] as int,
       joinDate: result['joinDate'] as DateTime,
+      isActive: result['isActive'] as bool,
     );
 
     if (tenant != null) {
@@ -96,6 +102,18 @@ class _TenantsPageState extends State<TenantsPage> {
               onRefresh: () {
                 tenantBloc.add(LoadTenants());
               },
+              actions: [
+                buildActiveToggleFilter(
+                  showActiveOnly: _showActiveOnly,
+                  onChanged: (val) {
+                    setState(() {
+                      _showActiveOnly = val;
+                      tenantBloc.add(LoadTenants());
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+              ],
             ),
             body: BlocListener<TenantBloc, TenantState>(
               listener: (context, state) {
@@ -147,6 +165,8 @@ class _TenantsPageState extends State<TenantsPage> {
       return const Center(child: Text('No tenants available.'));
     }
 
+    final filteredTenants = _showActiveOnly ? tenants.where((tenant) => tenant.isActive).toList() : tenants;
+
     final maxWidth = MediaQuery.of(context).size.width * 0.6;
 
     return LayoutBuilder(
@@ -155,26 +175,32 @@ class _TenantsPageState extends State<TenantsPage> {
             child: Container(
               width: maxWidth,
               padding: const EdgeInsets.all(16),
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  tenantBloc.add(LoadTenants());
-                  await tenantBloc.stream.firstWhere((state) => state is! TenantLoading);
-                },
-                child: ListView.separated(
-                  itemCount: tenants.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final tenant = tenants[index];
-                    final room = rooms.firstWhere((r) => r.id == tenant.roomId, orElse: () => Room(id: -1, name: 'Unknown', rent: 0));
+              child: Column(
+                children: [
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        tenantBloc.add(LoadTenants());
+                        await tenantBloc.stream.firstWhere((state) => state is! TenantLoading);
+                      },
+                      child: ListView.separated(
+                        itemCount: filteredTenants.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final tenant = filteredTenants[index];
+                          final room = rooms.firstWhere((r) => r.id == tenant.roomId, orElse: () => Room(id: -1, name: 'Unknown', rent: 0));
 
-                    return TenantCard(
-                      tenant: tenant,
-                      room: room,
-                      onEdit: () => _showTenantDialog(tenant: tenant, rooms: rooms),
-                      onDelete: () => _confirmDelete(tenant),
-                    );
-                  },
-                ),
+                          return TenantCard(
+                            tenant: tenant,
+                            room: room,
+                            onEdit: () => _showTenantDialog(tenant: tenant, rooms: rooms, isEditing: true),
+                            onDelete: () => _confirmDelete(tenant),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

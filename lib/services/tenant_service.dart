@@ -39,12 +39,12 @@ class TenantService {
     }
   }
 
-  Future<Tenant> updateTenant(int id, String name, int roomId, DateTime joinDate) async {
+  Future<Tenant> updateTenant(int id, String name, int roomId, DateTime joinDate, bool isActive) async {
     final dateOnly = DateFormat('yyyy-MM-dd').format(joinDate);
     final response = await http.put(
       Uri.parse('$baseUrl/$id'),
       headers: await _getAuthHeaders(),
-      body: json.encode({'name': name, 'roomId': roomId, 'joinDate': dateOnly}),
+      body: json.encode({'name': name, 'roomId': roomId, 'joinDate': dateOnly, 'isActive': isActive}),
     );
 
     if (response.statusCode == 200) {
