@@ -24,6 +24,7 @@ class HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     authBloc = context.read<AuthBloc>();
+    authBloc.add(CheckAuthStatus());
   }
 
   void _navigateToPage(Widget page) {
