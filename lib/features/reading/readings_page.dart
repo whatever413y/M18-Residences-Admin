@@ -123,6 +123,7 @@ class ReadingsPageState extends State<ReadingsPage> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     final theme = AppTheme.lightTheme;
     final screenWidth = MediaQuery.of(context).size.width;
@@ -132,7 +133,13 @@ class ReadingsPageState extends State<ReadingsPage> {
     return Theme(
       data: theme,
       child: Scaffold(
-        appBar: const CustomAppBar(title: 'Electricity Readings'),
+        appBar: CustomAppBar(
+          title: 'Electricity Readings',
+          showRefresh: true,
+          onRefresh: () {
+            readingBloc.add(LoadReadings());
+          },
+        ),
         body: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, authState) {
             if (authState is Unauthenticated) {
@@ -153,7 +160,7 @@ class ReadingsPageState extends State<ReadingsPage> {
               },
               child: BlocBuilder<ReadingBloc, ReadingState>(
                 builder: (context, state) {
-                  if (state is ReadingLoading || state is ReadingInitial) {
+                  if (state is ReadingLoading) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
@@ -163,49 +170,52 @@ class ReadingsPageState extends State<ReadingsPage> {
 
                   if (state is ReadingLoaded) {
                     final filteredReadings = _applyFilters(state.readings, _filterRoomId, _filterTenantId);
-
-                    return RefreshIndicator(
-                      onRefresh: () async {
-                        readingBloc.add(LoadReadings());
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
-                        child: Center(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              if (isNarrow)
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    _buildRoomFilter(state.rooms, state.tenants),
-                                    const SizedBox(height: 12),
-                                    _buildTenantFilter(state.tenants),
-                                    const SizedBox(height: 12),
-                                    _buildYearFilter(state.readings),
-                                    const SizedBox(height: 12),
-                                    _buildMonthFilter(state.readings),
-                                  ],
-                                )
-                              else
-                                Center(
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Expanded(child: _buildRoomFilter(state.rooms, state.tenants)),
-                                      const SizedBox(width: 12),
-                                      Expanded(child: _buildTenantFilter(state.tenants)),
-                                      const SizedBox(width: 12),
-                                      Expanded(child: _buildYearFilter(state.readings)),
-                                      const SizedBox(width: 12),
-                                      Expanded(child: _buildMonthFilter(state.readings)),
-                                    ],
-                                  ),
+                    return Padding(
+                      padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
+                      child: Center(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            if (isNarrow)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _buildRoomFilter(state.rooms, state.tenants),
+                                  const SizedBox(height: 12),
+                                  _buildTenantFilter(state.tenants),
+                                  const SizedBox(height: 12),
+                                  _buildYearFilter(state.readings),
+                                  const SizedBox(height: 12),
+                                  _buildMonthFilter(state.readings),
+                                ],
+                              )
+                            else
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Expanded(child: _buildRoomFilter(state.rooms, state.tenants)),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _buildTenantFilter(state.tenants)),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _buildYearFilter(state.readings)),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _buildMonthFilter(state.readings)),
+                                ],
+                              ),
+                            const SizedBox(height: 12),
+                            Expanded(
+                              child: RefreshIndicator(
+                                onRefresh: () async {
+                                  readingBloc.add(LoadReadings());
+                                  await readingBloc.stream.firstWhere((s) => s is! ReadingLoading);
+                                },
+                                child: SingleChildScrollView(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  child: _buildReadingsTable(filteredReadings, state.rooms, state.tenants),
                                 ),
-                              const SizedBox(height: 12),
-                              Expanded(child: _buildReadingsTable(filteredReadings, state.rooms, state.tenants)),
-                            ],
-                          ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );

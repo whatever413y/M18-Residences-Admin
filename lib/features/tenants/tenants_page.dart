@@ -90,7 +90,13 @@ class _TenantsPageState extends State<TenantsPage> {
         return Theme(
           data: theme,
           child: Scaffold(
-            appBar: const CustomAppBar(title: 'Tenants'),
+            appBar: CustomAppBar(
+              title: 'Tenants',
+              showRefresh: true,
+              onRefresh: () {
+                tenantBloc.add(LoadTenants());
+              },
+            ),
             body: BlocListener<TenantBloc, TenantState>(
               listener: (context, state) {
                 if (state is TenantError) {
@@ -107,45 +113,14 @@ class _TenantsPageState extends State<TenantsPage> {
                 builder: (context, state) {
                   if (state is TenantLoading || state is TenantInitial) {
                     return const Center(child: CircularProgressIndicator());
-                  } else if (state is TenantError) {
+                  }
+
+                  if (state is TenantError) {
                     return buildErrorWidget(context: context, message: state.message, onRetry: () => tenantBloc.add(LoadTenants()));
-                  } else if (state is TenantLoaded) {
-                    final tenants = state.tenants;
-                    final rooms = state.rooms;
+                  }
 
-                    if (tenants.isEmpty) {
-                      return const Center(child: Text('No tenants available.'));
-                    }
-
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        final maxWidth = MediaQuery.of(context).size.width * 0.6;
-
-                        return Center(
-                          child: Container(
-                            width: maxWidth,
-                            padding: const EdgeInsets.all(16),
-                            child: ListView.builder(
-                              itemCount: tenants.length,
-                              itemBuilder: (context, index) {
-                                final tenant = tenants[index];
-                                final room = rooms.firstWhere((r) => r.id == tenant.roomId, orElse: () => Room(id: -1, name: 'Unknown', rent: 0));
-
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                  child: TenantCard(
-                                    tenant: tenant,
-                                    room: room,
-                                    onEdit: () => _showTenantDialog(tenant: tenant, rooms: rooms),
-                                    onDelete: () => _confirmDelete(tenant),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                    );
+                  if (state is TenantLoaded) {
+                    return _buildTenantList(context, state.tenants, state.rooms);
                   }
 
                   return const SizedBox();
@@ -164,6 +139,45 @@ class _TenantsPageState extends State<TenantsPage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTenantList(BuildContext context, List<Tenant> tenants, List<Room> rooms) {
+    if (tenants.isEmpty) {
+      return const Center(child: Text('No tenants available.'));
+    }
+
+    final maxWidth = MediaQuery.of(context).size.width * 0.6;
+
+    return LayoutBuilder(
+      builder:
+          (context, constraints) => Center(
+            child: Container(
+              width: maxWidth,
+              padding: const EdgeInsets.all(16),
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  tenantBloc.add(LoadTenants());
+                  await tenantBloc.stream.firstWhere((state) => state is! TenantLoading);
+                },
+                child: ListView.separated(
+                  itemCount: tenants.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    final tenant = tenants[index];
+                    final room = rooms.firstWhere((r) => r.id == tenant.roomId, orElse: () => Room(id: -1, name: 'Unknown', rent: 0));
+
+                    return TenantCard(
+                      tenant: tenant,
+                      room: room,
+                      onEdit: () => _showTenantDialog(tenant: tenant, rooms: rooms),
+                      onDelete: () => _confirmDelete(tenant),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
     );
   }
 }

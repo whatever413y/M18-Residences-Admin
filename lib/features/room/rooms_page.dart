@@ -87,7 +87,13 @@ class _RoomsPageState extends State<RoomsPage> {
         return Theme(
           data: theme,
           child: Scaffold(
-            appBar: const CustomAppBar(title: 'Rooms'),
+            appBar: CustomAppBar(
+              title: 'Rooms',
+              showRefresh: true,
+              onRefresh: () {
+                roomBloc.add(LoadRooms());
+              },
+            ),
             body: BlocListener<RoomBloc, RoomState>(
               listener: (context, state) {
                 if (state is RoomError) {
@@ -121,15 +127,21 @@ class _RoomsPageState extends State<RoomsPage> {
                           child: Container(
                             width: maxWidth,
                             padding: const EdgeInsets.all(16),
-                            child: ListView.builder(
-                              itemCount: rooms.length,
-                              itemBuilder: (context, index) {
-                                final room = rooms[index];
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                  child: RoomCard(room: room, onEdit: () => _showRoomDialog(room: room), onDelete: () => _confirmDelete(room)),
-                                );
+                            child: RefreshIndicator(
+                              onRefresh: () async {
+                                roomBloc.add(LoadRooms());
+                                await roomBloc.stream.firstWhere((state) => state is! RoomLoading);
                               },
+                              child: ListView.builder(
+                                itemCount: rooms.length,
+                                itemBuilder: (context, index) {
+                                  final room = rooms[index];
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                    child: RoomCard(room: room, onEdit: () => _showRoomDialog(room: room), onDelete: () => _confirmDelete(room)),
+                                  );
+                                },
+                              ),
                             ),
                           ),
                         );
