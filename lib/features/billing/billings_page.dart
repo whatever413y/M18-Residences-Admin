@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
+import 'package:rental_management_system_flutter/models/additional_charrges.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
 import 'package:rental_management_system_flutter/models/reading.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
@@ -99,8 +100,8 @@ class BillingsPageState extends State<BillingsPage> {
       readingId: result['readingId'] as int,
       roomCharges: result['roomCharges'] as int,
       electricCharges: result['electricCharges'] as int,
-      additionalCharges: result['additionalCharges'] as int? ?? 0,
-      additionalDescription: result['additionalDescription'] as String?,
+      additionalCharges:
+          (result['additionalCharges'] as List<dynamic>?)?.map((e) => AdditionalCharge.fromJson(e as Map<String, dynamic>)).toList() ?? [],
     );
 
     if (bill != null) {

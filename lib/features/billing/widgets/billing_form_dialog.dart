@@ -9,6 +9,13 @@ import 'package:rental_management_system_flutter/utils/custom_dropdown_form.dart
 import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
 import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
 
+class AdditionalChargeInput {
+  int amount;
+  String description;
+
+  AdditionalChargeInput({this.amount = 0, this.description = ''});
+}
+
 class BillingFormDialog extends StatefulWidget {
   final Bill? bill;
   final List<Room> rooms;
@@ -25,8 +32,8 @@ class BillingFormDialog extends StatefulWidget {
     required this.tenants,
     required this.readings,
     required this.billingService,
-    required this.selectedRoomId,
-    required this.selectedTenantId,
+    this.selectedRoomId,
+    this.selectedTenantId,
   });
 
   @override
@@ -37,32 +44,41 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   final _formKey = GlobalKey<FormState>();
   final _roomChargesController = TextEditingController();
   final _electricChargesController = TextEditingController();
-  final _additionalChargesController = TextEditingController();
-  final _additionalDescController = TextEditingController();
+
+  List<AdditionalChargeInput> _additionalCharges = [];
+  List<TextEditingController> _additionalChargeControllers = [];
+  List<TextEditingController> _additionalDescControllers = [];
 
   static const int electricityRate = 17;
+
   int? _selectedRoomId;
   int? _selectedTenantId;
 
   @override
   void initState() {
     super.initState();
+
     final bill = widget.bill;
+
+    if (bill != null && bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty) {
+      _additionalCharges = bill.additionalCharges!.map((e) => AdditionalChargeInput(amount: e.amount, description: e.description)).toList();
+    } else {
+      _additionalCharges = [AdditionalChargeInput()];
+    }
+
+    _additionalChargeControllers = _additionalCharges.map((e) => TextEditingController(text: e.amount.toString())).toList();
+
+    _additionalDescControllers = _additionalCharges.map((e) => TextEditingController(text: e.description)).toList();
+
     if (bill != null) {
       final tenant = widget.tenants.firstWhere((t) => t.id == bill.tenantId);
       _selectedTenantId = tenant.id;
       _selectedRoomId = tenant.roomId;
       _roomChargesController.text = bill.roomCharges.toString();
       _electricChargesController.text = bill.electricCharges.toString();
-      _additionalChargesController.text = bill.additionalCharges.toString();
-      _additionalDescController.text = bill.additionalDescription ?? '';
     } else {
       _selectedRoomId = widget.selectedRoomId;
       _selectedTenantId = widget.selectedTenantId;
-      _roomChargesController.clear();
-      _electricChargesController.clear();
-      _additionalChargesController.clear();
-      _additionalDescController.clear();
       _updateCharges();
     }
   }
@@ -71,33 +87,37 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   void dispose() {
     _roomChargesController.dispose();
     _electricChargesController.dispose();
-    _additionalChargesController.dispose();
-    _additionalDescController.dispose();
+
+    for (final c in _additionalChargeControllers) {
+      c.dispose();
+    }
+    for (final c in _additionalDescControllers) {
+      c.dispose();
+    }
+
     super.dispose();
   }
 
   Reading? _getLatestReading(int? roomId, int? tenantId) {
     if (roomId == null || tenantId == null) return null;
 
-    final readings =
+    final filteredReadings =
         widget.readings.where((r) => r.roomId == roomId && r.tenantId == tenantId).toList()..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
 
-    return readings.isNotEmpty ? readings.first : null;
+    return filteredReadings.isNotEmpty ? filteredReadings.first : null;
   }
 
   void _updateCharges() {
     if (_selectedRoomId == null || _selectedTenantId == null) {
-      _roomChargesController.text = '';
-      _electricChargesController.text = '';
+      _roomChargesController.clear();
+      _electricChargesController.clear();
       return;
     }
 
     final room = widget.rooms.firstWhere((r) => r.id == _selectedRoomId, orElse: () => Room(id: 0, name: '', rent: 0));
 
     final roomCharges = room.rent.toInt();
-
     final electricConsumption = _getLatestReading(_selectedRoomId, _selectedTenantId)?.consumption ?? 0;
-
     final electricCharges = electricConsumption * electricityRate;
 
     _roomChargesController.text = roomCharges.toString();
@@ -105,7 +125,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   }
 
   void _submit() async {
-    if (_formKey.currentState?.validate() != true) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final reading = _getLatestReading(_selectedRoomId, _selectedTenantId);
     if (reading == null) {
@@ -115,13 +135,24 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       return;
     }
 
+    final additionalCharges = <Map<String, dynamic>>[];
+
+    for (var i = 0; i < _additionalCharges.length; i++) {
+      final amountText = _additionalChargeControllers[i].text.trim();
+      if (amountText.isEmpty) continue;
+
+      final amount = int.tryParse(amountText) ?? 0;
+      final description = _additionalDescControllers[i].text.trim();
+
+      additionalCharges.add({'amount': amount, 'description': description});
+    }
+
     Navigator.of(context).pop({
       'readingId': reading.id,
       'tenantId': _selectedTenantId,
       'roomCharges': int.tryParse(_roomChargesController.text) ?? 0,
       'electricCharges': int.tryParse(_electricChargesController.text) ?? 0,
-      'additionalCharges': int.tryParse(_additionalChargesController.text) ?? 0,
-      'additionalDescription': _additionalDescController.text,
+      'additionalCharges': additionalCharges,
     });
   }
 
@@ -137,22 +168,101 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   Widget _buildContent() {
     return Form(
       key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildRoomDropdown(),
-          const SizedBox(height: 16),
-          _buildTenantDropdown(),
-          const SizedBox(height: 16),
-          _buildRoomChargesField(),
-          const SizedBox(height: 16),
-          _buildElectricChargesField(),
-          const SizedBox(height: 16),
-          _buildAdditionalChargesField(),
-          const SizedBox(height: 16),
-          _buildAdditionalDescField(),
-        ],
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildRoomDropdown(),
+            const SizedBox(height: 16),
+            _buildTenantDropdown(),
+            const SizedBox(height: 16),
+            _buildRoomChargesField(),
+            const SizedBox(height: 16),
+            _buildElectricChargesField(),
+            const SizedBox(height: 16),
+            _buildAdditionalChargesList(),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildAdditionalChargesList() {
+    return Column(
+      children: [
+        ...List.generate(_additionalCharges.length, (index) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: CustomTextFormField(
+                    controller: _additionalChargeControllers[index],
+                    labelText: 'Additional Charge',
+                    keyboardType: const TextInputType.numberWithOptions(signed: false),
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) return null;
+                      if (int.tryParse(value) == null) {
+                        return 'Enter a valid number';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 5,
+                  child: CustomTextFormField(
+                    controller: _additionalDescControllers[index],
+                    labelText: 'Description',
+                    keyboardType: TextInputType.text,
+                    validator: (value) {
+                      if (value != null && value.trim().isNotEmpty && value.length > 200) {
+                        return 'Description too long';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (_additionalCharges.length > 1)
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle, color: Colors.red),
+                    onPressed: () {
+                      setState(() {
+                        _additionalCharges.removeAt(index);
+                        _additionalChargeControllers[index].dispose();
+                        _additionalDescControllers[index].dispose();
+                        _additionalChargeControllers.removeAt(index);
+                        _additionalDescControllers.removeAt(index);
+                      });
+                    },
+                  ),
+              ],
+            ),
+          );
+        }),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () {
+              setState(() {
+                _additionalCharges.add(AdditionalChargeInput());
+                _additionalChargeControllers.add(TextEditingController());
+                _additionalDescControllers.add(TextEditingController());
+              });
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Add Additional Charge'),
+          ),
+        ),
+      ],
     );
   }
 
@@ -243,42 +353,6 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
         padding: const EdgeInsets.all(12.0),
         child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
       ),
-    );
-  }
-
-  Widget _buildAdditionalChargesField() {
-    return CustomTextFormField(
-      controller: _additionalChargesController,
-      labelText: 'Additional Charges',
-      keyboardType: const TextInputType.numberWithOptions(signed: true),
-      prefixIcon: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
-      ),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) return null;
-
-        final parsed = int.tryParse(value);
-        if (parsed == null) {
-          return 'Enter a valid number';
-        }
-        return null;
-      },
-    );
-  }
-
-  Widget _buildAdditionalDescField() {
-    return CustomTextFormField(
-      controller: _additionalDescController,
-      labelText: 'Additional Description',
-      keyboardType: TextInputType.text,
-      prefixIcon: const Icon(Icons.description),
-      validator: (value) {
-        if (value != null && value.trim().isNotEmpty && value.length > 200) {
-          return 'Description too long';
-        }
-        return null;
-      },
     );
   }
 }

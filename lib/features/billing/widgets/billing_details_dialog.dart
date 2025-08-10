@@ -69,11 +69,11 @@ class BillingDetailsDialog extends StatelessWidget {
         _buildDetailRow('Electric Charges', currencyFormat.format(bill.electricCharges)),
         const SizedBox(height: 12),
         _buildDetailRow('Room Charges', currencyFormat.format(bill.roomCharges)),
-        if (bill.additionalCharges != null && bill.additionalCharges != 0) ...[
-          const SizedBox(height: 12),
-          _buildDetailRow(bill.additionalCharges! < 0 ? 'Discount' : 'Additional Charges', currencyFormat.format(bill.additionalCharges!.abs())),
-        ],
-        if ((bill.additionalDescription ?? '').isNotEmpty) ...[const SizedBox(height: 12), _buildDetailRow('Notes', bill.additionalDescription!)],
+        // if (bill.additionalCharges != null && bill.additionalCharges != 0) ...[
+        //   const SizedBox(height: 12),
+        //   _buildDetailRow(bill.additionalCharges! < 0 ? 'Discount' : 'Additional Charges', currencyFormat.format(bill.additionalCharges!.abs())),
+        // ],
+        // if ((bill.additionalDescription ?? '').isNotEmpty) ...[const SizedBox(height: 12), _buildDetailRow('Notes', bill.additionalDescription!)],
         const SizedBox(height: 12),
         _buildDivider(),
         const SizedBox(height: 12),

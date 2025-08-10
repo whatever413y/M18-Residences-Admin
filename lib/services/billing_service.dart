@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:rental_management_system_flutter/models/additional_charrges.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -28,7 +29,7 @@ class BillingService {
     required int readingId,
     required int roomCharges,
     required int electricCharges,
-    int? additionalCharges,
+    List<AdditionalCharge>? additionalCharges,
     String? additionalDescription,
   }) async {
     final Map<String, dynamic> body = {
@@ -36,8 +37,7 @@ class BillingService {
       'readingId': readingId,
       'roomCharges': roomCharges,
       'electricCharges': electricCharges,
-      'additionalCharges': additionalCharges,
-      'additionalDescription': additionalDescription,
+      'additionalCharges': additionalCharges?.map((e) => e.toJson()).toList(),
     };
 
     final response = await http.post(Uri.parse(baseUrl), headers: await _getAuthHeaders(), body: json.encode(body));
@@ -55,7 +55,7 @@ class BillingService {
     required int readingId,
     required int roomCharges,
     required int electricCharges,
-    int? additionalCharges,
+    List<AdditionalCharge>? additionalCharges,
     String? additionalDescription,
   }) async {
     final response = await http.put(
@@ -66,8 +66,7 @@ class BillingService {
         'readingId': readingId,
         'roomCharges': roomCharges,
         'electricCharges': electricCharges,
-        'additionalCharges': additionalCharges,
-        'additionalDescription': additionalDescription,
+        'additionalCharges': additionalCharges?.map((e) => e.toJson()).toList(),
       }),
     );
 
