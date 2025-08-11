@@ -72,7 +72,6 @@ class BillingDetailsDialog extends StatelessWidget {
       _buildDetailRow('Room Charges', currencyFormat.format(bill.roomCharges)),
     ];
 
-    // Add each additional charge as a separate detail row
     if (bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty) {
       for (final charge in bill.additionalCharges!) {
         final label = charge.amount < 0 ? 'Discount' : 'Additional Charge';

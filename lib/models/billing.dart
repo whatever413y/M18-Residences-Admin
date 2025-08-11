@@ -7,7 +7,6 @@ class Bill {
   final int roomCharges;
   final int electricCharges;
   final List<AdditionalCharge>? additionalCharges;
-  final String? additionalDescription;
   final int? totalAmount;
   final DateTime? createdAt;
 
@@ -18,7 +17,6 @@ class Bill {
     required this.roomCharges,
     required this.electricCharges,
     this.additionalCharges,
-    this.additionalDescription,
     this.totalAmount,
     this.createdAt,
   });
@@ -32,7 +30,6 @@ class Bill {
       electricCharges: json['electricCharges'],
       additionalCharges:
           json['additionalCharges'] != null ? (json['additionalCharges'] as List).map((e) => AdditionalCharge.fromJson(e)).toList() : null,
-      additionalDescription: json['additionalDescription'],
       totalAmount: json['totalAmount'],
       createdAt: DateTime.parse(json['createdAt']),
     );
@@ -45,7 +42,6 @@ class Bill {
       'roomCharges': roomCharges,
       'electricCharges': electricCharges,
       'additionalCharges': additionalCharges?.map((e) => e.toJson()).toList(),
-      'additionalDescription': additionalDescription,
     };
   }
 }

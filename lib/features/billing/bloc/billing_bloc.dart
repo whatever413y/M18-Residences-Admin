@@ -41,7 +41,6 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         roomCharges: event.bill.roomCharges,
         electricCharges: event.bill.electricCharges,
         additionalCharges: event.bill.additionalCharges,
-        additionalDescription: event.bill.additionalDescription,
       );
       add(LoadBills());
       emit(AddSuccess());
@@ -59,7 +58,6 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         roomCharges: event.bill.roomCharges,
         electricCharges: event.bill.electricCharges,
         additionalCharges: event.bill.additionalCharges,
-        additionalDescription: event.bill.additionalDescription,
       );
       add(LoadBills());
       emit(UpdateSuccess());
