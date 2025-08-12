@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:rental_management_system_flutter/models/additional_charrges.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
 
 class BillingDetailsDialog extends StatelessWidget {
@@ -38,6 +39,8 @@ class BillingDetailsDialog extends StatelessWidget {
                 const SizedBox(height: 16),
                 _buildDetails(),
                 const SizedBox(height: 24),
+                if (bill.receiptUrl != null && bill.receiptUrl!.isNotEmpty) _buildReceipt(context),
+                _spacer(),
                 _buildCloseButton(context),
               ],
             ),
@@ -49,6 +52,38 @@ class BillingDetailsDialog extends StatelessWidget {
 
   Widget _buildTitle() {
     return Text('Billing Details', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue.shade800));
+  }
+
+  Widget _buildReceipt(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: InkWell(
+        onTap: () {
+          if (bill.receiptUrl != null) {
+            showDialog(
+              context: context,
+              builder:
+                  (context) => Dialog(
+                    child: InteractiveViewer(
+                      child: Image.network(
+                        bill.receiptUrl!,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return SizedBox(width: 200, height: 200, child: Center(child: CircularProgressIndicator()));
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Padding(padding: EdgeInsets.all(20), child: Text('Failed to load image'));
+                        },
+                      ),
+                    ),
+                  ),
+            );
+          }
+        },
+        child: Text(Uri.parse(bill.receiptUrl!).pathSegments.last, style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline)),
+      ),
+    );
   }
 
   Widget _buildDivider() {
@@ -73,15 +108,7 @@ class BillingDetailsDialog extends StatelessWidget {
     ];
 
     if (bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty) {
-      for (final charge in bill.additionalCharges!) {
-        final label = charge.amount < 0 ? 'Discount' : 'Additional Charge';
-        detailRows.add(_spacer());
-        detailRows.add(_buildDetailRow(label, currencyFormat.format(charge.amount.abs())));
-        if (charge.description.isNotEmpty) {
-          detailRows.add(_spacer());
-          detailRows.add(_buildDetailRow('Notes', charge.description));
-        }
-      }
+      buildChargesDetails(detailRows, bill.additionalCharges!);
     }
 
     detailRows.addAll([
@@ -104,6 +131,44 @@ class BillingDetailsDialog extends StatelessWidget {
         const SizedBox(width: 16),
         Expanded(child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w400))),
       ],
+    );
+  }
+
+  void buildChargesDetails(List<Widget> detailRows, List<AdditionalCharge> charges) {
+    final currencyFormat = NumberFormat.currency(locale: 'en_PH', symbol: '₱', decimalDigits: 0);
+    final additionalCharges = charges.where((c) => c.amount >= 0).toList();
+    final discounts = charges.where((c) => c.amount < 0).toList();
+
+    if (additionalCharges.isNotEmpty) {
+      detailRows.add(const SizedBox(height: 12));
+      detailRows.add(const Text('Additional Charges', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)));
+      detailRows.add(const SizedBox(height: 8));
+
+      for (final charge in additionalCharges) {
+        detailRows.add(_buildChargeRow(charge.description, currencyFormat.format(charge.amount)));
+      }
+    }
+
+    if (discounts.isNotEmpty) {
+      detailRows.add(const SizedBox(height: 16));
+      detailRows.add(const Text('Discounts', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)));
+      detailRows.add(const SizedBox(height: 8));
+
+      for (final charge in discounts) {
+        detailRows.add(_buildChargeRow(charge.description, currencyFormat.format(charge.amount.abs())));
+      }
+    }
+  }
+
+  Widget _buildChargeRow(String description, String amount) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Expanded(child: Text(description.isNotEmpty ? description : '-', style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.grey))),
+          Text(amount),
+        ],
+      ),
     );
   }
 

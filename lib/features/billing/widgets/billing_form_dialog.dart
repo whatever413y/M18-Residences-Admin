@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
 import 'package:rental_management_system_flutter/models/reading.dart';
@@ -54,6 +55,8 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
 
   int? _selectedRoomId;
   int? _selectedTenantId;
+  PlatformFile? _receiptFile;
+  String? _receiptUrl;
 
   @override
   void initState() {
@@ -77,6 +80,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       _selectedRoomId = tenant.roomId;
       _roomChargesController.text = bill.roomCharges.toString();
       _electricChargesController.text = bill.electricCharges.toString();
+      _receiptUrl = bill.receiptUrl;
     } else {
       _selectedRoomId = widget.selectedRoomId;
       _selectedTenantId = widget.selectedTenantId;
@@ -97,6 +101,20 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     }
 
     super.dispose();
+  }
+
+  Future<void> _pickReceiptFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['png', 'jpg'], withData: true);
+
+    if (result != null && result.files.isNotEmpty) {
+      setState(() {
+        _receiptFile = result.files.first;
+      });
+    } else {
+      setState(() {
+        _receiptFile = null;
+      });
+    }
   }
 
   Reading? _getLatestReading(int? roomId, int? tenantId) {
@@ -154,6 +172,8 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       'roomCharges': int.tryParse(_roomChargesController.text) ?? 0,
       'electricCharges': int.tryParse(_electricChargesController.text) ?? 0,
       'additionalCharges': additionalCharges,
+      'receiptFile': _receiptFile,
+      'receiptUrl': _receiptUrl,
     });
   }
 
@@ -186,8 +206,56 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
             _buildElectricChargesField(),
             const SizedBox(height: 16),
             _buildAdditionalChargesList(),
+            const SizedBox(height: 16),
+            if (widget.bill != null) _buildUploadButton(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildUploadButton() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ElevatedButton.icon(
+          onPressed: _pickReceiptFile,
+          icon: Icon(Icons.attach_file),
+          label: Text((_receiptFile == null && _receiptUrl == null && _receiptUrl!.isNotEmpty) ? 'Attach Receipt' : 'Change Receipt'),
+        ),
+        if (_receiptFile != null || _receiptUrl != null && _receiptUrl!.isNotEmpty) _buildReceipt(context),
+      ],
+    );
+  }
+
+  Widget _buildReceipt(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: InkWell(
+        onTap: () {
+          if (_receiptUrl != null) {
+            showDialog(
+              context: context,
+              builder:
+                  (context) => Dialog(
+                    child: InteractiveViewer(
+                      child: Image.network(
+                        _receiptUrl!,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return SizedBox(width: 200, height: 200, child: Center(child: CircularProgressIndicator()));
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Padding(padding: EdgeInsets.all(20), child: Text('Failed to load image'));
+                        },
+                      ),
+                    ),
+                  ),
+            );
+          }
+        },
+        child: Text(Uri.parse(_receiptUrl!).pathSegments.last, style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline)),
       ),
     );
   }
@@ -213,16 +281,12 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
                   final amount = int.tryParse(value ?? '') ?? 0;
                   final description = _additionalDescControllers[index].text.trim();
 
-                  if (amount < 0) {
-                    return 'Enter a valid number';
-                  }
-
-                  if (amount > 0 && description.isEmpty) {
-                    return 'Description is required';
-                  }
-
-                  if (description.isNotEmpty && amount <= 0) {
+                  if (description.isNotEmpty && amount == 0) {
                     return 'Please fill in an amount';
+                  }
+
+                  if (amount != 0 && description.isEmpty) {
+                    return 'Description is required';
                   }
 
                   return null;
@@ -240,11 +304,11 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
                   final description = value?.trim() ?? '';
                   final amount = int.tryParse(_additionalChargeControllers[index].text) ?? 0;
 
-                  if (description.isNotEmpty && amount <= 0) {
+                  if (description.isNotEmpty && amount == 0) {
                     return 'Please fill in an amount';
                   }
 
-                  if (amount > 0 && description.isEmpty) {
+                  if (amount != 0 && description.isEmpty) {
                     return 'Description is required';
                   }
 

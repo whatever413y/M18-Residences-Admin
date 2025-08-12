@@ -58,6 +58,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
         roomCharges: event.bill.roomCharges,
         electricCharges: event.bill.electricCharges,
         additionalCharges: event.bill.additionalCharges,
+        receiptFile: event.bill.receiptFile,
+        receiptUrl: event.bill.receiptUrl,
       );
       add(LoadBills());
       emit(UpdateSuccess());

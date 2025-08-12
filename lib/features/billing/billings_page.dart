@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:collection/collection.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -102,6 +103,8 @@ class BillingsPageState extends State<BillingsPage> {
       electricCharges: result['electricCharges'] as int,
       additionalCharges:
           (result['additionalCharges'] as List<dynamic>?)?.map((e) => AdditionalCharge.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+      receiptFile: result['receiptFile'] as PlatformFile?,
+      receiptUrl: result['receiptUrl'] as String?,
     );
 
     if (bill != null) {
@@ -383,18 +386,15 @@ class BillingsPageState extends State<BillingsPage> {
                   DataCell(Text(currencyFormat.format(bill.roomCharges))),
                   DataCell(
                     bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty
-                        ? SizedBox(
-                          width: 50,
-                          child: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children:
-                                  bill.additionalCharges!.map((charge) {
-                                    final amountStr = charge.amount > 0 ? currencyFormat.format(charge.amount) : '-';
-                                    return Text(amountStr);
-                                  }).toList(),
-                            ),
+                        ? SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children:
+                                bill.additionalCharges!.map((charge) {
+                                  final amountStr = charge.amount == 0 ? '-' : currencyFormat.format(charge.amount);
+                                  return Text(amountStr, style: TextStyle(color: charge.amount < 0 ? Colors.red : null));
+                                }).toList(),
                           ),
                         )
                         : const Text('-'),
@@ -402,18 +402,15 @@ class BillingsPageState extends State<BillingsPage> {
 
                   DataCell(
                     bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty
-                        ? SizedBox(
-                          width: 150,
-                          child: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children:
-                                  bill.additionalCharges!.map((charge) {
-                                    final desc = charge.description.isNotEmpty ? charge.description : '-';
-                                    return Text(desc);
-                                  }).toList(),
-                            ),
+                        ? SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children:
+                                bill.additionalCharges!.map((charge) {
+                                  final desc = charge.description.isNotEmpty ? charge.description : '-';
+                                  return Text(desc);
+                                }).toList(),
                           ),
                         )
                         : const Text('-'),
