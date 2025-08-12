@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
 import 'package:rental_management_system_flutter/models/additional_charrges.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
 
@@ -60,24 +64,36 @@ class BillingDetailsDialog extends StatelessWidget {
       child: InkWell(
         onTap: () {
           if (bill.receiptUrl != null) {
+            context.read<AuthBloc>().add(FetchReceiptUrl(bill.tenantId.toString(), bill.receiptUrl!));
             showDialog(
               context: context,
-              builder:
-                  (context) => Dialog(
-                    child: InteractiveViewer(
-                      child: Image.network(
-                        bill.receiptUrl!,
-                        fit: BoxFit.contain,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return SizedBox(width: 200, height: 200, child: Center(child: CircularProgressIndicator()));
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Padding(padding: EdgeInsets.all(20), child: Text('Failed to load image'));
-                        },
-                      ),
+              builder: (context) {
+                return Dialog(
+                  child: SizedBox(
+                    child: BlocBuilder<AuthBloc, AuthState>(
+                      builder: (context, state) {
+                        if (state is ReceiptUrlLoading) {
+                          return const Center(child: CircularProgressIndicator());
+                        } else if (state is ReceiptUrlLoaded) {
+                          return InteractiveViewer(
+                            child: Image.network(
+                              state.url,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Padding(padding: EdgeInsets.all(20), child: Text('Failed to load image'));
+                              },
+                            ),
+                          );
+                        } else if (state is ReceiptUrlError) {
+                          return Center(child: Text('Error loading receipt: ${state.message}'));
+                        } else {
+                          return const SizedBox.shrink();
+                        }
+                      },
                     ),
                   ),
+                );
+              },
             );
           }
         },

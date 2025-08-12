@@ -1,5 +1,9 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
 import 'package:rental_management_system_flutter/models/reading.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
@@ -42,6 +46,7 @@ class BillingFormDialog extends StatefulWidget {
 }
 
 class _BillingFormDialogState extends State<BillingFormDialog> {
+  late AuthBloc authBloc;
   final _formKey = GlobalKey<FormState>();
   final _roomChargesController = TextEditingController();
   final _electricChargesController = TextEditingController();
@@ -61,7 +66,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   @override
   void initState() {
     super.initState();
-
+    authBloc = context.read<AuthBloc>();
     final bill = widget.bill;
 
     if (bill != null && bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty) {
@@ -229,25 +234,37 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       padding: const EdgeInsets.only(top: 8),
       child: InkWell(
         onTap: () {
-          if (_receiptUrl != null) {
+          if (_receiptUrl != null && _selectedTenantId != null) {
+            authBloc.add(FetchReceiptUrl(_selectedTenantId.toString(), _receiptUrl!));
             showDialog(
               context: context,
-              builder:
-                  (context) => Dialog(
-                    child: InteractiveViewer(
-                      child: Image.network(
-                        _receiptUrl!,
-                        fit: BoxFit.contain,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return SizedBox(width: 200, height: 200, child: Center(child: CircularProgressIndicator()));
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Padding(padding: EdgeInsets.all(20), child: Text('Failed to load image'));
-                        },
-                      ),
+              builder: (context) {
+                return Dialog(
+                  child: SizedBox(
+                    child: BlocBuilder<AuthBloc, AuthState>(
+                      builder: (context, state) {
+                        if (state is ReceiptUrlLoading) {
+                          return const Center(child: CircularProgressIndicator());
+                        } else if (state is ReceiptUrlLoaded) {
+                          return InteractiveViewer(
+                            child: Image.network(
+                              state.url,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Padding(padding: EdgeInsets.all(20), child: Text('Failed to load image'));
+                              },
+                            ),
+                          );
+                        } else if (state is ReceiptUrlError) {
+                          return Center(child: Text('Error loading receipt: ${state.message}'));
+                        } else {
+                          return const SizedBox.shrink();
+                        }
+                      },
                     ),
                   ),
+                );
+              },
             );
           }
         },
