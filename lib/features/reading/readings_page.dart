@@ -49,11 +49,13 @@ class ReadingsPageState extends State<ReadingsPage> {
     readingBloc.add(LoadReadings());
   }
 
-  List<Reading> _applyFilters(List<Reading> readings, int? filterRoomId, int? filterTenantId) {
+  List<Reading> _applyFilters(List<Reading> readings, int? filterRoomId, int? filterYear, int? filterMonth, int? filterTenantId) {
     return readings.where((r) {
       final matchRoom = filterRoomId == null || r.roomId == filterRoomId;
+      final matchYear = filterYear == null || r.createdAt!.year == filterYear;
+      final matchMonth = filterMonth == null || r.createdAt!.month == filterMonth;
       final matchTenant = filterTenantId == null || r.tenantId == filterTenantId;
-      return matchRoom && matchTenant;
+      return matchRoom && matchYear && matchMonth && matchTenant;
     }).toList();
   }
 
@@ -182,7 +184,7 @@ class ReadingsPageState extends State<ReadingsPage> {
                   }
 
                   if (state is ReadingLoaded) {
-                    final filteredReadings = _applyFilters(state.readings, _filterRoomId, _filterTenantId);
+                    final filteredReadings = _applyFilters(state.readings, _filterRoomId, _filterYear, _filterMonth, _filterTenantId);
                     return Padding(
                       padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
                       child: Center(
@@ -329,25 +331,19 @@ class ReadingsPageState extends State<ReadingsPage> {
       child: DataTable(
         showCheckboxColumn: false,
         columns: const [
+          DataColumn(label: Text('Actions')),
           DataColumn(label: Text('Room')),
           DataColumn(label: Text('Tenant')),
           DataColumn(label: Text('Previous (kWh)')),
           DataColumn(label: Text('Current (kWh)')),
           DataColumn(label: Text('Consumption (kWh)')),
           DataColumn(label: Text('Date')),
-          DataColumn(label: Text('Actions')),
         ],
         rows:
             filteredReadings.map((reading) {
               return DataRow(
                 onSelectChanged: (_) => _showReadingDetailsDialog(reading, rooms, tenants),
                 cells: [
-                  DataCell(Text(_getRoomName(rooms, reading.roomId))),
-                  DataCell(Text(_getTenantName(tenants, reading.tenantId))),
-                  DataCell(Text(reading.prevReading.toString())),
-                  DataCell(Text(reading.currReading.toString())),
-                  DataCell(Text(reading.consumption.toString())),
-                  DataCell(Text(_dateFormat.format(reading.createdAt!))),
                   DataCell(
                     Row(
                       children: [
@@ -369,6 +365,12 @@ class ReadingsPageState extends State<ReadingsPage> {
                       ],
                     ),
                   ),
+                  DataCell(Text(_getRoomName(rooms, reading.roomId))),
+                  DataCell(Text(_getTenantName(tenants, reading.tenantId))),
+                  DataCell(Text(reading.prevReading.toString())),
+                  DataCell(Text(reading.currReading.toString())),
+                  DataCell(Text(reading.consumption.toString())),
+                  DataCell(Text(_dateFormat.format(reading.createdAt!))),
                 ],
               );
             }).toList(),

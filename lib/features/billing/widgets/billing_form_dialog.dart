@@ -6,7 +6,6 @@ import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
 import 'package:rental_management_system_flutter/services/billing_service.dart';
 import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
-import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
 import 'package:rental_management_system_flutter/utils/shared_widgets.dart';
 
 class AdditionalChargeInput {
@@ -55,6 +54,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
 
   int? _selectedRoomId;
   int? _selectedTenantId;
+  int? _selectedReadingId;
   PlatformFile? _receiptFile;
   String? _receiptUrl;
 
@@ -78,12 +78,15 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       final tenant = widget.tenants.firstWhere((t) => t.id == bill.tenantId);
       _selectedTenantId = tenant.id;
       _selectedRoomId = tenant.roomId;
+      _selectedReadingId = bill.readingId;
       _roomChargesController.text = bill.roomCharges.toString();
       _electricChargesController.text = bill.electricCharges.toString();
       _receiptUrl = bill.receiptUrl;
     } else {
       _selectedRoomId = widget.selectedRoomId;
       _selectedTenantId = widget.selectedTenantId;
+      final reading = _getLatestReading(_selectedRoomId, _selectedTenantId);
+      _selectedReadingId = reading?.id;
       _updateCharges();
     }
   }
@@ -146,28 +149,21 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   void _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    final reading = _getLatestReading(_selectedRoomId, _selectedTenantId);
-    if (reading == null) {
-      if (context.mounted) {
-        CustomSnackbar.show(context, 'No reading found for this tenant', type: SnackBarType.error);
-      }
-      return;
-    }
-
     final additionalCharges = <Map<String, dynamic>>[];
 
     for (var i = 0; i < _additionalCharges.length; i++) {
       final amountText = _additionalChargeControllers[i].text.trim();
-      if (amountText.isEmpty) continue;
+      final description = _additionalDescControllers[i].text.trim();
 
       final amount = int.tryParse(amountText) ?? 0;
-      final description = _additionalDescControllers[i].text.trim();
+
+      if (amount == 0 && description.isEmpty) continue;
 
       additionalCharges.add({'amount': amount, 'description': description});
     }
 
     Navigator.of(context).pop({
-      'readingId': reading.id,
+      'readingId': _selectedReadingId,
       'tenantId': _selectedTenantId,
       'roomCharges': int.tryParse(_roomChargesController.text) ?? 0,
       'electricCharges': int.tryParse(_electricChargesController.text) ?? 0,
@@ -221,7 +217,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
         ElevatedButton.icon(
           onPressed: _pickReceiptFile,
           icon: Icon(Icons.attach_file),
-          label: Text((_receiptFile == null && _receiptUrl == null && _receiptUrl!.isNotEmpty) ? 'Attach Receipt' : 'Change Receipt'),
+          label: Text((_receiptFile == null && (_receiptUrl?.isEmpty ?? true)) ? 'Attach Receipt' : 'Change Receipt'),
         ),
         if (_receiptFile != null || _receiptUrl != null && _receiptUrl!.isNotEmpty) _buildReceipt(context),
       ],

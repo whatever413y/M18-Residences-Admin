@@ -52,25 +52,20 @@ class BillingsPageState extends State<BillingsPage> {
     billingBloc.add(LoadBills());
   }
 
-  List<Bill> _applyFilters(List<Bill> bills, int? filterRoomId, int? filterTenantId, int? filterYear, List<Tenant> tenants) {
+  List<Bill> _applyFilters(List<Bill> bills, int? filterRoomId, int? filterTenantId, int? filterYear, int? filterMonth, List<Tenant> tenants) {
     return bills.where((bill) {
       final tenant = tenants.firstWhereOrNull((t) => t.id == bill.tenantId);
       final matchRoom = filterRoomId == null || tenant?.roomId == filterRoomId;
       final matchTenant = filterTenantId == null || bill.tenantId == filterTenantId;
       final matchYear = filterYear == null || bill.createdAt!.year == filterYear;
-      return matchRoom && matchTenant && matchYear;
+      final matchMonth = filterMonth == null || bill.createdAt!.month == filterMonth;
+      return matchRoom && matchTenant && matchYear && matchMonth;
     }).toList();
   }
 
   Room? _findRoomById(List<Room> rooms, int id) => rooms.firstWhereOrNull((r) => r.id == id);
 
   Tenant? _findTenantById(List<Tenant> tenants, int id) => tenants.firstWhereOrNull((t) => t.id == id);
-
-  Reading? _getLatestReading(List<Reading> readings, int roomId, int tenantId) {
-    final filtered =
-        readings.where((r) => r.roomId == roomId && r.tenantId == tenantId).toList()..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
-    return filtered.isNotEmpty ? filtered.first : null;
-  }
 
   Future<void> _showBillingDialog({Bill? bill, required List<Room> rooms, required List<Tenant> tenants, required List<Reading> readings}) async {
     final state = billingBloc.state;
@@ -131,8 +126,7 @@ class BillingsPageState extends State<BillingsPage> {
   void _showBillingDetailsDialog(Bill bill, List<Room> rooms, List<Tenant> tenants, List<Reading> readings) {
     final tenant = _findTenantById(tenants, bill.tenantId);
     final room = tenant != null ? _findRoomById(rooms, tenant.roomId) : null;
-
-    final consumption = _getLatestReading(readings, tenant?.roomId ?? 0, bill.tenantId)?.consumption.toString() ?? '0';
+    final consumption = readings.firstWhereOrNull((r) => r.id == bill.readingId)?.consumption ?? 0;
 
     final date = _dateFormat.format(bill.createdAt!);
 
@@ -143,7 +137,7 @@ class BillingsPageState extends State<BillingsPage> {
             bill: bill,
             tenantName: tenant?.name ?? 'Unknown Tenant',
             roomName: room?.name ?? 'Unknown Room',
-            consumption: consumption,
+            consumption: consumption.toString(),
             date: date,
           ),
     );
@@ -210,7 +204,7 @@ class BillingsPageState extends State<BillingsPage> {
                     final rooms = state.rooms;
                     final tenants = state.tenants;
                     final readings = state.readings;
-                    final bills = _applyFilters(state.bills, _filterRoomId, _filterTenantId, _filterYear, tenants);
+                    final bills = _applyFilters(state.bills, _filterRoomId, _filterTenantId, _filterYear, _filterMonth, tenants);
 
                     return Padding(
                       padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
@@ -339,6 +333,7 @@ class BillingsPageState extends State<BillingsPage> {
 
   Widget _buildBillingsTable({required List<Bill> bills, required List<Room> rooms, required List<Tenant> tenants, required List<Reading> readings}) {
     final currencyFormat = NumberFormat.currency(locale: 'en_PH', symbol: '₱', decimalDigits: 0);
+
     final filteredBills =
         bills.where((bill) {
           if (!_showActiveOnly) return true;
@@ -360,6 +355,7 @@ class BillingsPageState extends State<BillingsPage> {
       child: DataTable(
         showCheckboxColumn: false,
         columns: const [
+          DataColumn(label: Text('Actions')),
           DataColumn(label: Text('Room')),
           DataColumn(label: Text('Tenant')),
           DataColumn(label: Text('Consumption (kWh)')),
@@ -369,19 +365,42 @@ class BillingsPageState extends State<BillingsPage> {
           DataColumn(label: Text('Notes')),
           DataColumn(label: Text('Total (₱)')),
           DataColumn(label: Text('Date')),
-          DataColumn(label: Text('Actions')),
         ],
         rows:
             filteredBills.map((bill) {
               final tenant = _findTenantById(tenants, bill.tenantId);
               final room = tenant != null ? _findRoomById(rooms, tenant.roomId) : null;
+              final consumption = readings.firstWhereOrNull((r) => r.id == bill.readingId)?.consumption ?? 0;
 
               return DataRow(
                 onSelectChanged: (_) => _showBillingDetailsDialog(bill, rooms, tenants, readings),
                 cells: [
+                  DataCell(
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _showBillingDialog(bill: bill, rooms: rooms, tenants: tenants, readings: readings),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed:
+                              () => showConfirmationAction(
+                                context: context,
+                                messenger: ScaffoldMessenger.of(context),
+                                confirmTitle: 'Delete Bill',
+                                confirmContent: 'Are you sure you want to delete this bill?',
+                                onConfirmed: () async {
+                                  await _deleteBill(bill.id!);
+                                },
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
                   DataCell(Text(room?.name ?? '-')),
                   DataCell(Text(tenant?.name ?? '-')),
-                  DataCell(Text('${_getLatestReading(readings, tenant?.roomId ?? 0, bill.tenantId)?.consumption ?? '-'}')),
+                  DataCell(Text(consumption.toString())),
                   DataCell(Text(currencyFormat.format(bill.electricCharges))),
                   DataCell(Text(currencyFormat.format(bill.roomCharges))),
                   DataCell(
@@ -417,29 +436,6 @@ class BillingsPageState extends State<BillingsPage> {
                   ),
                   DataCell(Text(currencyFormat.format(bill.totalAmount))),
                   DataCell(Text(_dateFormat.format(bill.createdAt!))),
-                  DataCell(
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _showBillingDialog(bill: bill, rooms: rooms, tenants: tenants, readings: readings),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed:
-                              () => showConfirmationAction(
-                                context: context,
-                                messenger: ScaffoldMessenger.of(context),
-                                confirmTitle: 'Delete Bill',
-                                confirmContent: 'Are you sure you want to delete this bill?',
-                                onConfirmed: () async {
-                                  await _deleteBill(bill.id!);
-                                },
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               );
             }).toList(),
