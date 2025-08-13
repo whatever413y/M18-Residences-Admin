@@ -40,7 +40,7 @@ class BillingDetailsDialog extends StatelessWidget {
                 const SizedBox(height: 16),
                 _buildDetails(),
                 const SizedBox(height: 24),
-                if (bill.receiptUrl != null && bill.receiptUrl!.isNotEmpty) buildReceipt(context, bill.tenantId, bill.receiptUrl!),
+                if (bill.receiptUrl != null && bill.receiptUrl!.isNotEmpty) buildReceipt(context, tenantName, bill.receiptUrl!),
                 _spacer(),
                 _buildCloseButton(context),
               ],

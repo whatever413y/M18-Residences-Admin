@@ -123,13 +123,13 @@ Widget buildMonthFilter({required List<Reading> readings, required int? selected
   );
 }
 
-Widget buildReceipt(BuildContext context, int? tenantId, String? receiptUrl) {
+Widget buildReceipt(BuildContext context, String? tenantName, String? receiptUrl) {
   return Padding(
     padding: const EdgeInsets.only(top: 8),
     child: InkWell(
       onTap: () {
-        if (tenantId != null) {
-          context.read<AuthBloc>().add(FetchReceiptUrl(tenantId.toString(), receiptUrl));
+        if (tenantName != null) {
+          context.read<AuthBloc>().add(FetchReceiptUrl(tenantName, receiptUrl));
           showDialog(
             context: context,
             builder: (context) {

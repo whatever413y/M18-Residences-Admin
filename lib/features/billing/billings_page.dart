@@ -102,8 +102,6 @@ class BillingsPageState extends State<BillingsPage> {
       receiptUrl: result['receiptUrl'] as String?,
     );
 
-    print('New bill: ${newBill.toJson()}');
-
     if (bill != null) {
       billingBloc.add(UpdateBill(newBill));
       if (!mounted) return;

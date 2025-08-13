@@ -215,6 +215,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   }
 
   Widget _buildUploadButton() {
+    final tenantName = _selectedTenantId != null ? widget.tenants.firstWhere((t) => t.id == _selectedTenantId!).name : '';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -227,7 +228,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
         if (_receiptFile != null && _receiptUrl!.isNotEmpty)
           Padding(padding: const EdgeInsets.only(top: 8), child: Text(_receiptFile!.name, style: const TextStyle(fontStyle: FontStyle.italic)))
         else if (_receiptUrl != null && _receiptUrl!.isNotEmpty && _selectedTenantId != null)
-          buildReceipt(context, _selectedTenantId!, _receiptUrl!),
+          buildReceipt(context, tenantName, _receiptUrl!),
       ],
     );
   }
