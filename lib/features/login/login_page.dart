@@ -80,7 +80,7 @@ class LoginPageState extends State<LoginPage> {
             child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),
-                child: ConstrainedBox(constraints: BoxConstraints(maxWidth: screenWidth < 800 ? screenWidth : 800), child: _buildCard(primaryColor)),
+                child: ConstrainedBox(constraints: BoxConstraints(maxWidth: screenWidth < 600 ? screenWidth : 600), child: _buildCard(primaryColor)),
               ),
             ),
           ),

@@ -167,25 +167,46 @@ class _TenantsPageState extends State<TenantsPage> {
 
     final filteredTenants = _showActiveOnly ? tenants.where((tenant) => tenant.isActive).toList() : tenants;
 
-    final maxWidth = MediaQuery.of(context).size.width * 0.6;
-
     return LayoutBuilder(
-      builder:
-          (context, constraints) => Center(
-            child: Container(
-              width: maxWidth,
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: () async {
-                        tenantBloc.add(LoadTenants());
-                        await tenantBloc.stream.firstWhere((state) => state is! TenantLoading);
-                      },
-                      child: ListView.separated(
+      builder: (context, constraints) {
+        final screenWidth = constraints.maxWidth;
+        final isWide = screenWidth > 600;
+        final maxWidth = screenWidth * 0.95;
+
+        return Center(
+          child: Container(
+            width: maxWidth,
+            padding: const EdgeInsets.all(16),
+            child: RefreshIndicator(
+              onRefresh: () async {
+                tenantBloc.add(LoadTenants());
+                await tenantBloc.stream.firstWhere((state) => state is! TenantLoading);
+              },
+              child:
+                  isWide
+                      ? GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 400,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 3 / 1.5,
+                        ),
                         itemCount: filteredTenants.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final tenant = filteredTenants[index];
+                          final room = rooms.firstWhere((r) => r.id == tenant.roomId, orElse: () => Room(id: -1, name: 'Unknown', rent: 0));
+
+                          return TenantCard(
+                            tenant: tenant,
+                            room: room,
+                            onEdit: () => _showTenantDialog(tenant: tenant, rooms: rooms, isEditing: true),
+                            onDelete: () => _confirmDelete(tenant),
+                          );
+                        },
+                      )
+                      : ListView.separated(
+                        itemCount: filteredTenants.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
                         itemBuilder: (context, index) {
                           final tenant = filteredTenants[index];
                           final room = rooms.firstWhere((r) => r.id == tenant.roomId, orElse: () => Room(id: -1, name: 'Unknown', rent: 0));
@@ -198,12 +219,10 @@ class _TenantsPageState extends State<TenantsPage> {
                           );
                         },
                       ),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
+        );
+      },
     );
   }
 }

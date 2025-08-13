@@ -148,7 +148,7 @@ class BillingsPageState extends State<BillingsPage> {
     final theme = AppTheme.lightTheme;
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth * 0.05;
-    final isNarrow = screenWidth < 800;
+    final isNarrow = screenWidth < 600;
 
     return Theme(
       data: theme,
@@ -214,27 +214,34 @@ class BillingsPageState extends State<BillingsPage> {
                           children: [
                             if (isNarrow)
                               Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  _buildRoomFilter(rooms, tenants),
+                                  Row(
+                                    children: [
+                                      Expanded(child: _buildRoomFilter(state.rooms, state.tenants)),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: _buildTenantFilter(state.tenants, state.readings)),
+                                    ],
+                                  ),
                                   const SizedBox(height: 12),
-                                  _buildTenantFilter(tenants, readings),
-                                  const SizedBox(height: 12),
-                                  _buildYearFilter(readings),
-                                  const SizedBox(height: 12),
-                                  _buildMonthFilter(readings),
+                                  Row(
+                                    children: [
+                                      Expanded(child: _buildMonthFilter(state.readings)),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: _buildYearFilter(state.readings)),
+                                    ],
+                                  ),
                                 ],
                               )
                             else
                               Row(
                                 children: [
-                                  Expanded(child: _buildRoomFilter(rooms, tenants)),
+                                  Expanded(child: _buildRoomFilter(state.rooms, state.tenants)),
                                   const SizedBox(width: 12),
-                                  Expanded(child: _buildTenantFilter(tenants, readings)),
+                                  Expanded(child: _buildTenantFilter(state.tenants, state.readings)),
                                   const SizedBox(width: 12),
-                                  Expanded(child: _buildYearFilter(readings)),
+                                  Expanded(child: _buildYearFilter(state.readings)),
                                   const SizedBox(width: 12),
-                                  Expanded(child: _buildMonthFilter(readings)),
+                                  Expanded(child: _buildMonthFilter(state.readings)),
                                 ],
                               ),
                             const SizedBox(height: 12),

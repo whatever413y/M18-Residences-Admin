@@ -234,7 +234,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   }
 
   Widget _buildAdditionalChargesList() {
-    final isWide = MediaQuery.of(context).size.width > 800;
+    final isWide = MediaQuery.of(context).size.width > 600;
 
     return Column(
       children: [

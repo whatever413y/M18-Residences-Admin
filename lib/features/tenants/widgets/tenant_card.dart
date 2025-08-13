@@ -9,13 +9,7 @@ class TenantCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  const TenantCard({
-    super.key,
-    required this.tenant,
-    required this.room,
-    required this.onEdit,
-    required this.onDelete,
-  });
+  const TenantCard({super.key, required this.tenant, required this.room, required this.onEdit, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -23,44 +17,33 @@ class TenantCard extends StatelessWidget {
 
     return Card(
       elevation: 3,
-      margin: const EdgeInsets.symmetric(vertical: 10),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        title: _buildTitle(),
-        subtitle: _buildSubtitle(dateFormat),
-        isThreeLine: true,
-        trailing: _buildActions(),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(tenant.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  SizedBox(height: 6),
+                  Text('Room: ${room.name}\nJoined: ${dateFormat.format(tenant.joinDate)}'),
+                ],
+              ),
+            ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(icon: Icon(Icons.edit, color: Colors.blue), onPressed: onEdit),
+                IconButton(icon: Icon(Icons.delete, color: Colors.red), onPressed: onDelete),
+              ],
+            ),
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildTitle() {
-    return Text(
-      tenant.name,
-      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-    );
-  }
-
-  Widget _buildSubtitle(DateFormat dateFormat) {
-    return Text(
-      'Room: ${room.name}\nJoined: ${dateFormat.format(tenant.joinDate)}',
-    );
-  }
-
-  Widget _buildActions() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.edit, color: Colors.blue),
-          onPressed: onEdit,
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: onDelete,
-        ),
-      ],
     );
   }
 }
