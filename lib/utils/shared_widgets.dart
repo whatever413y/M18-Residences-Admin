@@ -1,6 +1,10 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
+import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
 import 'package:rental_management_system_flutter/models/reading.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
@@ -116,5 +120,49 @@ Widget buildMonthFilter({required List<Reading> readings, required int? selected
     ],
     value: selectedMonth,
     onChanged: onMonthChanged,
+  );
+}
+
+Widget buildReceipt(BuildContext context, int? tenantId, String? receiptUrl) {
+  return Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: InkWell(
+      onTap: () {
+        if (tenantId != null) {
+          context.read<AuthBloc>().add(FetchReceiptUrl(tenantId.toString(), receiptUrl));
+          showDialog(
+            context: context,
+            builder: (context) {
+              return Dialog(
+                child: SizedBox(
+                  child: BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) {
+                      if (state is ReceiptUrlLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (state is ReceiptUrlLoaded) {
+                        return InteractiveViewer(
+                          child: Image.network(
+                            state.url,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Padding(padding: EdgeInsets.all(20), child: Text('Failed to load image'));
+                            },
+                          ),
+                        );
+                      } else if (state is ReceiptUrlError) {
+                        return Center(child: Text('Error loading receipt: ${state.message}'));
+                      } else {
+                        return const SizedBox.shrink();
+                      }
+                    },
+                  ),
+                ),
+              );
+            },
+          );
+        }
+      },
+      child: Text(Uri.parse(receiptUrl!).pathSegments.last, style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline)),
+    ),
   );
 }

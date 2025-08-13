@@ -1,9 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
 import 'package:rental_management_system_flutter/models/reading.dart';
 import 'package:rental_management_system_flutter/models/room.dart';
@@ -66,7 +63,6 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   @override
   void initState() {
     super.initState();
-    authBloc = context.read<AuthBloc>();
     final bill = widget.bill;
 
     if (bill != null && bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty) {
@@ -141,10 +137,13 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       return;
     }
 
+    final reading = _getLatestReading(_selectedRoomId, _selectedTenantId);
+    _selectedReadingId = reading?.id;
+
     final room = widget.rooms.firstWhere((r) => r.id == _selectedRoomId, orElse: () => Room(id: 0, name: '', rent: 0));
 
     final roomCharges = room.rent.toInt();
-    final electricConsumption = _getLatestReading(_selectedRoomId, _selectedTenantId)?.consumption ?? 0;
+    final electricConsumption = reading?.consumption ?? 0;
     final electricCharges = electricConsumption * electricityRate;
 
     _roomChargesController.text = roomCharges.toString();
@@ -224,52 +223,12 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
           icon: Icon(Icons.attach_file),
           label: Text((_receiptFile == null && (_receiptUrl?.isEmpty ?? true)) ? 'Attach Receipt' : 'Change Receipt'),
         ),
-        if (_receiptFile != null || _receiptUrl != null && _receiptUrl!.isNotEmpty) _buildReceipt(context),
-      ],
-    );
-  }
 
-  Widget _buildReceipt(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: InkWell(
-        onTap: () {
-          if (_receiptUrl != null && _selectedTenantId != null) {
-            authBloc.add(FetchReceiptUrl(_selectedTenantId.toString(), _receiptUrl!));
-            showDialog(
-              context: context,
-              builder: (context) {
-                return Dialog(
-                  child: SizedBox(
-                    child: BlocBuilder<AuthBloc, AuthState>(
-                      builder: (context, state) {
-                        if (state is ReceiptUrlLoading) {
-                          return const Center(child: CircularProgressIndicator());
-                        } else if (state is ReceiptUrlLoaded) {
-                          return InteractiveViewer(
-                            child: Image.network(
-                              state.url,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Padding(padding: EdgeInsets.all(20), child: Text('Failed to load image'));
-                              },
-                            ),
-                          );
-                        } else if (state is ReceiptUrlError) {
-                          return Center(child: Text('Error loading receipt: ${state.message}'));
-                        } else {
-                          return const SizedBox.shrink();
-                        }
-                      },
-                    ),
-                  ),
-                );
-              },
-            );
-          }
-        },
-        child: Text(Uri.parse(_receiptUrl!).pathSegments.last, style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline)),
-      ),
+        if (_receiptFile != null && _receiptUrl!.isNotEmpty)
+          Padding(padding: const EdgeInsets.only(top: 8), child: Text(_receiptFile!.name, style: const TextStyle(fontStyle: FontStyle.italic)))
+        else if (_receiptUrl != null && _receiptUrl!.isNotEmpty && _selectedTenantId != null)
+          buildReceipt(context, _selectedTenantId!, _receiptUrl!),
+      ],
     );
   }
 

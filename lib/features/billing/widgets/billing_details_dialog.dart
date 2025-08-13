@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
 import 'package:rental_management_system_flutter/models/additional_charrges.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
+import 'package:rental_management_system_flutter/utils/shared_widgets.dart';
 
 class BillingDetailsDialog extends StatelessWidget {
   final Bill bill;
@@ -43,7 +40,7 @@ class BillingDetailsDialog extends StatelessWidget {
                 const SizedBox(height: 16),
                 _buildDetails(),
                 const SizedBox(height: 24),
-                if (bill.receiptUrl != null && bill.receiptUrl!.isNotEmpty) _buildReceipt(context),
+                if (bill.receiptUrl != null && bill.receiptUrl!.isNotEmpty) buildReceipt(context, bill.tenantId, bill.receiptUrl!),
                 _spacer(),
                 _buildCloseButton(context),
               ],
@@ -56,50 +53,6 @@ class BillingDetailsDialog extends StatelessWidget {
 
   Widget _buildTitle() {
     return Text('Billing Details', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue.shade800));
-  }
-
-  Widget _buildReceipt(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: InkWell(
-        onTap: () {
-          if (bill.receiptUrl != null) {
-            context.read<AuthBloc>().add(FetchReceiptUrl(bill.tenantId.toString(), bill.receiptUrl!));
-            showDialog(
-              context: context,
-              builder: (context) {
-                return Dialog(
-                  child: SizedBox(
-                    child: BlocBuilder<AuthBloc, AuthState>(
-                      builder: (context, state) {
-                        if (state is ReceiptUrlLoading) {
-                          return const Center(child: CircularProgressIndicator());
-                        } else if (state is ReceiptUrlLoaded) {
-                          return InteractiveViewer(
-                            child: Image.network(
-                              state.url,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Padding(padding: EdgeInsets.all(20), child: Text('Failed to load image'));
-                              },
-                            ),
-                          );
-                        } else if (state is ReceiptUrlError) {
-                          return Center(child: Text('Error loading receipt: ${state.message}'));
-                        } else {
-                          return const SizedBox.shrink();
-                        }
-                      },
-                    ),
-                  ),
-                );
-              },
-            );
-          }
-        },
-        child: Text(Uri.parse(bill.receiptUrl!).pathSegments.last, style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline)),
-      ),
-    );
   }
 
   Widget _buildDivider() {
