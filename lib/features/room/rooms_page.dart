@@ -121,7 +121,9 @@ class _RoomsPageState extends State<RoomsPage> {
 
                     return LayoutBuilder(
                       builder: (context, constraints) {
-                        final maxWidth = MediaQuery.of(context).size.width * 0.6;
+                        final screenWidth = constraints.maxWidth;
+                        final isWide = screenWidth > 600;
+                        final maxWidth = screenWidth * 0.95;
 
                         return Center(
                           child: Container(
@@ -132,16 +134,37 @@ class _RoomsPageState extends State<RoomsPage> {
                                 roomBloc.add(LoadRooms());
                                 await roomBloc.stream.firstWhere((state) => state is! RoomLoading);
                               },
-                              child: ListView.builder(
-                                itemCount: rooms.length,
-                                itemBuilder: (context, index) {
-                                  final room = rooms[index];
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                    child: RoomCard(room: room, onEdit: () => _showRoomDialog(room: room), onDelete: () => _confirmDelete(room)),
-                                  );
-                                },
-                              ),
+                              child:
+                                  isWide
+                                      ? GridView.builder(
+                                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                          maxCrossAxisExtent: 300,
+                                          crossAxisSpacing: 16,
+                                          mainAxisSpacing: 16,
+                                          childAspectRatio: 3 / 1.5,
+                                        ),
+                                        itemCount: rooms.length,
+                                        itemBuilder: (context, index) {
+                                          final room = rooms[index];
+                                          return RoomCard(
+                                            room: room,
+                                            onEdit: () => _showRoomDialog(room: room),
+                                            onDelete: () => _confirmDelete(room),
+                                          );
+                                        },
+                                      )
+                                      : ListView.separated(
+                                        itemCount: rooms.length,
+                                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                                        itemBuilder: (context, index) {
+                                          final room = rooms[index];
+                                          return RoomCard(
+                                            room: room,
+                                            onEdit: () => _showRoomDialog(room: room),
+                                            onDelete: () => _confirmDelete(room),
+                                          );
+                                        },
+                                      ),
                             ),
                           ),
                         );

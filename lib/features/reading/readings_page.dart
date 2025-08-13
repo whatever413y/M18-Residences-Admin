@@ -130,7 +130,7 @@ class ReadingsPageState extends State<ReadingsPage> {
   Widget build(BuildContext context) {
     final theme = AppTheme.lightTheme;
     final screenWidth = MediaQuery.of(context).size.width;
-    final bool isNarrow = screenWidth < 800;
+    final bool isNarrow = screenWidth < 600;
     final horizontalPadding = screenWidth * 0.05;
 
     return Theme(
@@ -193,20 +193,26 @@ class ReadingsPageState extends State<ReadingsPage> {
                           children: [
                             if (isNarrow)
                               Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  _buildRoomFilter(state.rooms, state.tenants),
+                                  Row(
+                                    children: [
+                                      Expanded(child: _buildRoomFilter(state.rooms, state.tenants)),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: _buildTenantFilter(state.tenants, state.readings)),
+                                    ],
+                                  ),
                                   const SizedBox(height: 12),
-                                  _buildTenantFilter(state.tenants, state.readings),
-                                  const SizedBox(height: 12),
-                                  _buildYearFilter(state.readings),
-                                  const SizedBox(height: 12),
-                                  _buildMonthFilter(state.readings),
+                                  Row(
+                                    children: [
+                                      Expanded(child: _buildMonthFilter(state.readings)),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: _buildYearFilter(state.readings)),
+                                    ],
+                                  ),
                                 ],
                               )
                             else
                               Row(
-                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Expanded(child: _buildRoomFilter(state.rooms, state.tenants)),
                                   const SizedBox(width: 12),
