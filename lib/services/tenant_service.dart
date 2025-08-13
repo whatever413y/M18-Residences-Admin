@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
 import 'package:rental_management_system_flutter/models/tenant.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TenantService {
-  static final String baseUrl = '${dotenv.env['API_URL']}/tenants';
+  static final String baseUrl = '${String.fromEnvironment('API_URL')}/tenants';
 
   Future<Map<String, String>> _getAuthHeaders() async {
     final prefs = await SharedPreferences.getInstance();

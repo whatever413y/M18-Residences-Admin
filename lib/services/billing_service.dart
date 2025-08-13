@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:rental_management_system_flutter/models/additional_charrges.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
@@ -10,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
 class BillingService {
-  static final String baseUrl = '${dotenv.env['API_URL']}/bills';
+  static final String baseUrl = '${String.fromEnvironment('API_URL')}/bills';
 
   Future<Map<String, String>> _getAuthHeaders() async {
     final prefs = await SharedPreferences.getInstance();

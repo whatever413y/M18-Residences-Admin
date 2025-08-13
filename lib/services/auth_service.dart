@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:rental_management_system_flutter/models/admin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
+  static final String baseUrl = '${String.fromEnvironment('API_URL')}/auth';
   static const _tokenKey = 'auth_token';
   static const _adminIdKey = 'admin_id';
 
@@ -13,7 +13,7 @@ class AuthService {
   Admin? get cachedAdmin => _cachedAdmin;
 
   Future<String?> adminLogin(String username, String password) async {
-    final url = Uri.parse('${dotenv.env['API_URL']}/auth/admin-login');
+    final url = Uri.parse('$baseUrl/admin-login');
 
     final response = await http.post(
       url,
@@ -69,7 +69,7 @@ class AuthService {
     if (token == null || token.isEmpty) return false;
     final headers = await _getAuthHeaders();
     try {
-      final response = await http.get(Uri.parse('${dotenv.env['API_URL']}/auth/validate-token'), headers: headers);
+      final response = await http.get(Uri.parse('$baseUrl/validate-token'), headers: headers);
       return response.statusCode == 200;
     } catch (e) {
       throw Exception('Error validating token: $e');
@@ -78,7 +78,7 @@ class AuthService {
 
   Future<String?> fetchReceiptUrl(String tenantName, String filename) async {
     final headers = await _getAuthHeaders();
-    final url = Uri.parse('${dotenv.env['API_URL']}/auth/receipts/$tenantName/$filename');
+    final url = Uri.parse('$baseUrl/receipts/$tenantName/$filename');
     final response = await http.get(url, headers: headers);
 
     if (response.statusCode == 200) {
