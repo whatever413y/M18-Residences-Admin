@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rental_management_system_flutter/models/admin.dart';
 import 'package:rental_management_system_flutter/services/auth_service.dart';
@@ -41,11 +43,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       final token = await authService.adminLogin(event.username, event.password);
+      if (token == null) {
+        emit(AuthError('Invalid credentials'));
+        return;
+      }
       final admin = authService.cachedAdmin!;
       _cachedAdmin = admin;
-      emit(Authenticated(token: token!, admin: admin));
+      emit(Authenticated(token: token, admin: admin));
+    } on TimeoutException {
+      emit(AuthError('Connection timed out. Please try again.'));
+    } on SocketException {
+      emit(AuthError('Network error. Please check your connection.'));
     } catch (e) {
-      emit(AuthError('Login failed: $e'));
+      emit(AuthError('Unexpected error: ${e.toString()}'));
     }
   }
 

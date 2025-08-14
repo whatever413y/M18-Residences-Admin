@@ -206,7 +206,7 @@ class _TenantsPageState extends State<TenantsPage> {
                       )
                       : ListView.separated(
                         itemCount: filteredTenants.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        separatorBuilder: (_, _) => const SizedBox(height: 16),
                         itemBuilder: (context, index) {
                           final tenant = filteredTenants[index];
                           final room = rooms.firstWhere((r) => r.id == tenant.roomId, orElse: () => Room(id: -1, name: 'Unknown', rent: 0));
