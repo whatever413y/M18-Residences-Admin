@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:rental_management_system_flutter/models/admin.dart';
@@ -13,31 +15,33 @@ class AuthService {
   Admin? get cachedAdmin => _cachedAdmin;
 
   Future<String?> adminLogin(String username, String password) async {
-    final url = Uri.parse('${dotenv.env['API_URL']}/auth/admin-login');
+    try {
+      final url = Uri.parse('${dotenv.env['API_URL']}/auth/admin-login');
+      final response = await http
+          .post(url, headers: {'Content-Type': 'application/json'}, body: jsonEncode({'username': username, 'password': password}))
+          .timeout(const Duration(seconds: 120));
 
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'username': username, 'password': password}),
-    );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final token = data['token'] as String?;
+        final userJson = data['user'] as Map<String, dynamic>;
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final token = data['token'] as String?;
-      final userJson = data['user'] as Map<String, dynamic>;
+        if (token == null || token.isEmpty) return null;
 
-      if (token == null || token.isEmpty) {
-        throw Exception('Token missing from response');
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_tokenKey, token);
+        await prefs.setString(_adminIdKey, userJson['username']);
+
+        _cachedAdmin = Admin.fromJson(userJson);
+        return token;
       }
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_tokenKey, token);
-      await prefs.setString(_adminIdKey, userJson['username']);
-
-      _cachedAdmin = Admin.fromJson(userJson);
-      return token;
-    } else {
-      throw Exception('Admin login failed: ${response.body}');
+      return null;
+    } on TimeoutException {
+      throw TimeoutException('Request timed out.');
+    } on SocketException {
+      throw SocketException('No internet connection');
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
     }
   }
 

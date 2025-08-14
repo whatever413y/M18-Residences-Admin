@@ -4,6 +4,7 @@ import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
 import 'package:rental_management_system_flutter/features/home/home_page.dart';
+import 'package:rental_management_system_flutter/features/login/widgets/loading_overlay.dart';
 import 'package:rental_management_system_flutter/theme.dart';
 import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
 
@@ -48,45 +49,68 @@ class LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final theme = AppTheme.lightTheme;
     final primaryColor = theme.primaryColor;
-    final screenWidth = MediaQuery.of(context).size.width;
 
     return Theme(
       data: theme,
       child: Scaffold(
-        body: BlocListener<AuthBloc, AuthState>(
+        body: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is AuthError) {
               setState(() {
-                _usernameError = 'Invalid Credentials';
-                _passwordError = 'Invalid Credentials';
+                _usernameError = state.message;
+                _passwordError = state.message;
               });
               _formKey.currentState?.validate();
             } else if (state is Authenticated) {
               _usernameController.clear();
               _passwordController.clear();
-              if (Navigator.of(context).canPop() == false) {
+              if (!Navigator.of(context).canPop()) {
                 _navigateToPage(HomePage());
               }
             }
           },
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [primaryColor.withAlpha(230), primaryColor.withAlpha(150)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+          builder: (context, state) {
+            final isLoading = state is AuthLoading;
+
+            return _buildLoading(
+              isLoading,
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth = constraints.maxWidth;
+                  final cardWidth = maxWidth < 600 ? maxWidth * 0.9 : 600.0;
+
+                  return Stack(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [primaryColor.withAlpha(230), primaryColor.withAlpha(150)],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+                      Center(
+                        child: SingleChildScrollView(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: cardWidth),
+                            child: Padding(padding: const EdgeInsets.all(16.0), child: _buildCard(primaryColor)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
-            ),
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: ConstrainedBox(constraints: BoxConstraints(maxWidth: screenWidth < 600 ? screenWidth : 600), child: _buildCard(primaryColor)),
-              ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
+  }
+
+  Widget _buildLoading(bool isLoading, Widget child) {
+    return Stack(children: [child, if (isLoading) LoadingOverlay()]);
   }
 
   Widget _buildCard(Color primaryColor) {
