@@ -93172,7 +93172,7 @@ q.y2$=0}p.aw()},
 zS(){var s=0,r=A.E(t.H),q=this,p
 var $async$zS=A.z(function(a,b){if(a===1)return A.B(b,r)
 while(true)switch(s){case 0:s=2
-return A.u($.aHJ.bh().CR(A.b(["png","jpg"],t.s),B.oC,!0),$async$zS)
+return A.u($.aHJ.bh().CR(A.b(["png","jpg","jpeg"],t.s),B.oC,!0),$async$zS)
 case 2:p=b
 if(p!=null&&J.yZ(p.a))q.a4(new A.ap4(q,p))
 else q.a4(new A.ap5(q))
@@ -93229,11 +93229,10 @@ p=A.cq(A.B5(q,A.ok(A.ci(s,B.ca,B.r,B.aa),q,q,B.ad),r.e),q,p.a.a*0.6)
 return A.Le(r.a7v(a,r.a.c!=null),p,B.aq,o)},
 a7Z(){var s,r,q=this,p=null,o=q.Q!=null?J.L8(q.a.e,new A.ap1(q)).c:"",n=A.hk(B.Hm,p,p,p)
 if(q.at==null){s=q.ax
-s=s==null?p:s.length===0
-s=s!==!1}else s=!1
+s=s==null||s.length===0}else s=!1
 n=A.b([A.aHC(n,A.aE(s?"Attach Receipt":"Change Receipt",p,p,p,p,p,p,p,p),q.gajj())],t.p)
 s=q.at
-if(s!=null&&q.ax.length!==0)n.push(new A.aM(B.oe,A.aE(s.b,p,p,p,p,B.TC,p,p,p),p))
+if(s!=null)n.push(new A.aM(B.oe,A.aE(s.b,p,p,p,p,B.TC,p,p,p),p))
 else{s=q.ax
 if(s!=null&&s.length!==0&&q.Q!=null){r=q.c
 r.toString
