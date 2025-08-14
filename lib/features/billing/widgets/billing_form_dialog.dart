@@ -108,7 +108,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   }
 
   Future<void> _pickReceiptFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['png', 'jpg'], withData: true);
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg'], withData: true);
 
     if (result != null && result.files.isNotEmpty) {
       setState(() {
@@ -216,16 +216,17 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
 
   Widget _buildUploadButton() {
     final tenantName = _selectedTenantId != null ? widget.tenants.firstWhere((t) => t.id == _selectedTenantId!).name : '';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ElevatedButton.icon(
           onPressed: _pickReceiptFile,
           icon: Icon(Icons.attach_file),
-          label: Text((_receiptFile == null && (_receiptUrl?.isEmpty ?? true)) ? 'Attach Receipt' : 'Change Receipt'),
+          label: Text((_receiptFile == null && (_receiptUrl == null || _receiptUrl!.isEmpty)) ? 'Attach Receipt' : 'Change Receipt'),
         ),
 
-        if (_receiptFile != null && _receiptUrl!.isNotEmpty)
+        if (_receiptFile != null)
           Padding(padding: const EdgeInsets.only(top: 8), child: Text(_receiptFile!.name, style: const TextStyle(fontStyle: FontStyle.italic)))
         else if (_receiptUrl != null && _receiptUrl!.isNotEmpty && _selectedTenantId != null)
           buildReceipt(context, tenantName, _receiptUrl!),
