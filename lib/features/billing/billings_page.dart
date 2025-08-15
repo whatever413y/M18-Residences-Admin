@@ -197,6 +197,7 @@ class BillingsPageState extends State<BillingsPage> {
                   }
 
                   if (state is BillingError) {
+                    authBloc.add(CheckAuthStatus());
                     return buildErrorWidget(context: context, message: state.message, onRetry: () => billingBloc.add(LoadBills()));
                   }
 

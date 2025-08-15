@@ -111,6 +111,7 @@ class _RoomsPageState extends State<RoomsPage> {
                   if (state is RoomLoading || state is RoomInitial) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (state is RoomError) {
+                    authBloc.add(CheckAuthStatus());
                     return buildErrorWidget(context: context, message: state.message, onRetry: () => roomBloc.add(LoadRooms()));
                   } else if (state is RoomLoaded) {
                     final rooms = state.rooms;

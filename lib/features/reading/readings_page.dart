@@ -180,6 +180,7 @@ class ReadingsPageState extends State<ReadingsPage> {
                   }
 
                   if (state is ReadingError) {
+                    authBloc.add(CheckAuthStatus());
                     return buildErrorWidget(context: context, message: state.message, onRetry: () => readingBloc.add(LoadReadings()));
                   }
 
