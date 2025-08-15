@@ -134,6 +134,7 @@ class _TenantsPageState extends State<TenantsPage> {
                   }
 
                   if (state is TenantError) {
+                    authBloc.add(CheckAuthStatus());
                     return buildErrorWidget(context: context, message: state.message, onRetry: () => tenantBloc.add(LoadTenants()));
                   }
 
