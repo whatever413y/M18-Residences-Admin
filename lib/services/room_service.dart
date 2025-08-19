@@ -13,40 +13,60 @@ class RoomService {
   }
 
   Future<List<Room>> fetchRooms() async {
-    final response = await http.get(Uri.parse(baseUrl), headers: await _getAuthHeaders());
-    if (response.statusCode == 200) {
-      final List data = json.decode(response.body);
-      return data.map((json) => Room.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load rooms');
+    try {
+      final response = await http.get(Uri.parse(baseUrl), headers: await _getAuthHeaders());
+      if (response.statusCode == 200) {
+        final List data = json.decode(response.body);
+        return data.map((json) => Room.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load rooms: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching rooms: $e');
+      rethrow;
     }
   }
 
-  Future<Room> createRoom(String name, int rent) async {
-    final response = await http.post(Uri.parse(baseUrl), headers: await _getAuthHeaders(), body: json.encode({'name': name, 'rent': rent}));
+  Future<Room?> createRoom(String name, int rent) async {
+    try {
+      final response = await http.post(Uri.parse(baseUrl), headers: await _getAuthHeaders(), body: json.encode({'name': name, 'rent': rent}));
 
-    if (response.statusCode == 201) {
-      return Room.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to create room');
+      if (response.statusCode == 201) {
+        return Room.fromJson(json.decode(response.body));
+      } else {
+        throw Exception('Failed to create room: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      print('Error creating room: $e');
+      rethrow;
     }
   }
 
   Future<Room> updateRoom(int id, String name, int rent) async {
-    final response = await http.put(Uri.parse('$baseUrl/$id'), headers: await _getAuthHeaders(), body: json.encode({'name': name, 'rent': rent}));
+    try {
+      final response = await http.put(Uri.parse('$baseUrl/$id'), headers: await _getAuthHeaders(), body: json.encode({'name': name, 'rent': rent}));
 
-    if (response.statusCode == 200) {
-      return Room.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to update room');
+      if (response.statusCode == 200) {
+        return Room.fromJson(json.decode(response.body));
+      } else {
+        throw Exception('Failed to update room: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      print('Error updating room: $e');
+      rethrow;
     }
   }
 
   Future<void> deleteRoom(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/$id'), headers: await _getAuthHeaders());
+    try {
+      final response = await http.delete(Uri.parse('$baseUrl/$id'), headers: await _getAuthHeaders());
 
-    if (response.statusCode != 204) {
-      throw Exception('Failed to delete room');
+      if (response.statusCode != 204) {
+        throw Exception('Failed to delete room: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      print('Error deleting room: $e');
+      rethrow;
     }
   }
 }

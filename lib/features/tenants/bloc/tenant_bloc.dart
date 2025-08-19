@@ -22,7 +22,7 @@ class TenantBloc extends Bloc<TenantEvent, TenantState> {
       final rooms = await roomService.fetchRooms();
       emit(TenantLoaded(tenants, rooms));
     } catch (e) {
-      emit(TenantError('Failed to load tenants'));
+      emit(TenantError('Failed to load tenants: $e'));
     }
   }
 
@@ -32,7 +32,7 @@ class TenantBloc extends Bloc<TenantEvent, TenantState> {
       add(LoadTenants());
       emit(AddSuccess());
     } catch (e) {
-      emit(TenantError('Failed to add tenant'));
+      emit(TenantError('Failed to add tenant: $e'));
     }
   }
 
@@ -42,7 +42,7 @@ class TenantBloc extends Bloc<TenantEvent, TenantState> {
       add(LoadTenants());
       emit(UpdateSuccess());
     } catch (e) {
-      emit(TenantError('Failed to update tenant'));
+      emit(TenantError('Failed to update tenant: $e'));
     }
   }
 

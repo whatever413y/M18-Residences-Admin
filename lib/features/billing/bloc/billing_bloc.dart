@@ -29,7 +29,7 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       final readings = await readingService.fetchReadings();
       emit(BillingLoaded(bills, rooms, tenants, readings));
     } catch (e) {
-      emit(BillingError('Failed to load billing data'));
+      emit(BillingError('Failed to load billing data: $e'));
     }
   }
 
@@ -44,8 +44,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       );
       add(LoadBills());
       emit(AddSuccess());
-    } catch (_) {
-      emit(BillingError('Failed to create bill'));
+    } catch (e) {
+      emit(BillingError('Failed to create bill: $e'));
     }
   }
 
@@ -63,8 +63,8 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
       );
       add(LoadBills());
       emit(UpdateSuccess());
-    } catch (_) {
-      emit(BillingError('Failed to update bill'));
+    } catch (e) {
+      emit(BillingError('Failed to update bill: $e'));
     }
   }
 

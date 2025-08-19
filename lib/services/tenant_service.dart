@@ -14,49 +14,70 @@ class TenantService {
   }
 
   Future<List<Tenant>> fetchTenants() async {
-    final response = await http.get(Uri.parse(baseUrl), headers: await _getAuthHeaders());
-    if (response.statusCode == 200) {
-      final List data = json.decode(response.body);
-      return data.map((json) => Tenant.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load tenants');
+    try {
+      final response = await http.get(Uri.parse(baseUrl), headers: await _getAuthHeaders());
+      if (response.statusCode == 200) {
+        final List data = json.decode(response.body);
+        return data.map((json) => Tenant.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load tenants: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching tenants: $e');
+      rethrow;
     }
   }
 
   Future<Tenant> createTenant(String name, int roomId, DateTime joinDate) async {
-    final dateOnly = DateFormat('yyyy-MM-dd').format(joinDate);
-    final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: await _getAuthHeaders(),
-      body: json.encode({'name': name, 'roomId': roomId, 'joinDate': dateOnly}),
-    );
+    final dateTimeString = DateFormat('yyyy-MM-ddTHH:mm:ss').format(joinDate);
+    try {
+      final response = await http.post(
+        Uri.parse(baseUrl),
+        headers: await _getAuthHeaders(),
+        body: json.encode({'name': name, 'room_id': roomId, 'join_date': dateTimeString}),
+      );
 
-    if (response.statusCode == 201) {
-      return Tenant.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to create tenant');
+      if (response.statusCode == 201) {
+        return Tenant.fromJson(json.decode(response.body));
+      } else {
+        throw Exception('Failed to create tenant: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      print('Error creating tenant: $e');
+      rethrow;
     }
   }
 
   Future<Tenant> updateTenant(int id, String name, int roomId, DateTime joinDate, bool isActive) async {
-    final dateOnly = DateFormat('yyyy-MM-dd').format(joinDate);
-    final response = await http.put(
-      Uri.parse('$baseUrl/$id'),
-      headers: await _getAuthHeaders(),
-      body: json.encode({'name': name, 'roomId': roomId, 'joinDate': dateOnly, 'isActive': isActive}),
-    );
+    final dateTimeString = DateFormat('yyyy-MM-ddTHH:mm:ss').format(joinDate);
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/$id'),
+        headers: await _getAuthHeaders(),
+        body: json.encode({'name': name, 'room_id': roomId, 'join_date': dateTimeString, 'is_active': isActive}),
+      );
 
-    if (response.statusCode == 200) {
-      return Tenant.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to update tenant');
+      if (response.statusCode == 200) {
+        return Tenant.fromJson(json.decode(response.body));
+      } else {
+        throw Exception('Failed to update tenant: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      print('Error updating tenant: $e');
+      rethrow;
     }
   }
 
   Future<void> deleteTenant(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/$id'), headers: await _getAuthHeaders());
-    if (response.statusCode != 204) {
-      throw Exception('Failed to delete tenant');
+    try {
+      final response = await http.delete(Uri.parse('$baseUrl/$id'), headers: await _getAuthHeaders());
+
+      if (response.statusCode != 204) {
+        throw Exception('Failed to delete tenant: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      print('Error deleting tenant: $e');
+      rethrow;
     }
   }
 }

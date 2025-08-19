@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:rental_management_system_flutter/models/additional_charrges.dart';
+import 'package:rental_management_system_flutter/models/additional_charges.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
 import 'package:rental_management_system_flutter/utils/shared_widgets.dart';
 

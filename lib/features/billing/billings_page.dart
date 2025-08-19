@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
 import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
-import 'package:rental_management_system_flutter/models/additional_charrges.dart';
+import 'package:rental_management_system_flutter/models/additional_charges.dart';
 import 'package:rental_management_system_flutter/models/billing.dart';
 import 'package:rental_management_system_flutter/models/reading.dart';
 import 'package:rental_management_system_flutter/models/room.dart';

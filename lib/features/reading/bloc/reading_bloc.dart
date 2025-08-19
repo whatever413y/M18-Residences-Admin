@@ -25,7 +25,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       final tenants = await tenantService.fetchTenants();
       emit(ReadingLoaded(readings, rooms, tenants));
     } catch (e) {
-      emit(ReadingError('Failed to load readings'));
+      emit(ReadingError('Failed to load readings: $e'));
     }
   }
 
@@ -40,7 +40,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       add(LoadReadings());
       emit(AddSuccess());
     } catch (e) {
-      emit(ReadingError('Failed to add reading'));
+      emit(ReadingError('Failed to add reading: $e'));
     }
   }
 
@@ -56,7 +56,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       add(LoadReadings());
       emit(UpdateSuccess());
     } catch (e) {
-      emit(ReadingError('Failed to update reading'));
+      emit(ReadingError('Failed to update reading: $e'));
     }
   }
 
