@@ -19,7 +19,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       final rooms = await roomService.fetchRooms();
       emit(RoomLoaded(rooms));
     } catch (e) {
-      emit(RoomError('Failed to load rooms'));
+      emit(RoomError('Failed to load rooms: $e'));
     }
   }
 
@@ -29,7 +29,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       add(LoadRooms());
       emit(AddSuccess());
     } catch (e) {
-      emit(RoomError('Failed to create room'));
+      emit(RoomError('Failed to create room: $e'));
     }
   }
 
@@ -39,7 +39,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       add(LoadRooms());
       emit(UpdateSuccess());
     } catch (e) {
-      emit(RoomError('Failed to update room'));
+      emit(RoomError('Failed to update room: $e'));
     }
   }
 

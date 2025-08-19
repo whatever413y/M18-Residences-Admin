@@ -20,21 +20,16 @@ class Reading {
   factory Reading.fromJson(Map<String, dynamic> json) {
     return Reading(
       id: json['id'],
-      tenantId: json['tenantId'],
-      roomId: json['roomId'],
-      prevReading: json['prevReading'],
-      currReading: json['currReading'],
+      tenantId: json['tenant_id'],
+      roomId: json['room_id'],
+      prevReading: json['prev_reading'],
+      currReading: json['curr_reading'],
       consumption: json['consumption'],
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: DateTime.parse(json['created_at']),
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'tenantId': tenantId,
-      'roomId': roomId,
-      'prevReading': prevReading,
-      'currReading': currReading,
-    };
+    return {'tenant_id': tenantId, 'room_id': roomId, 'prev_reading': prevReading, 'curr_reading': currReading};
   }
 }
