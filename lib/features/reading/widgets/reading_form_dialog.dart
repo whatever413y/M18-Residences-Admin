@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:rental_management_system_flutter/models/reading.dart';
-import 'package:rental_management_system_flutter/models/room.dart';
-import 'package:rental_management_system_flutter/models/tenant.dart';
-import 'package:rental_management_system_flutter/services/reading_service.dart';
-import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
-import 'package:rental_management_system_flutter/utils/shared_widgets.dart';
+import 'package:m18_residences_admin/models/reading.dart';
+import 'package:m18_residences_admin/models/room.dart';
+import 'package:m18_residences_admin/models/tenant.dart';
+import 'package:m18_residences_admin/services/reading_service.dart';
+import 'package:m18_residences_admin/utils/custom_form_field.dart';
+import 'package:m18_residences_admin/utils/shared_widgets.dart';
 
 class ReadingFormDialog extends StatefulWidget {
   final Reading? reading;

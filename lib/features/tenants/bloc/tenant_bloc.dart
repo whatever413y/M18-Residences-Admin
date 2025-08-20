@@ -1,8 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rental_management_system_flutter/features/tenants/bloc/tenant_event.dart';
-import 'package:rental_management_system_flutter/features/tenants/bloc/tenant_state.dart';
-import 'package:rental_management_system_flutter/services/tenant_service.dart';
-import 'package:rental_management_system_flutter/services/room_service.dart';
+import 'package:m18_residences_admin/features/tenants/bloc/tenant_event.dart';
+import 'package:m18_residences_admin/features/tenants/bloc/tenant_state.dart';
+import 'package:m18_residences_admin/services/tenant_service.dart';
+import 'package:m18_residences_admin/services/room_service.dart';
 
 class TenantBloc extends Bloc<TenantEvent, TenantState> {
   final TenantService tenantService;

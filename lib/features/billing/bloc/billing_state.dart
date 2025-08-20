@@ -1,8 +1,8 @@
 import 'package:equatable/equatable.dart';
-import 'package:rental_management_system_flutter/models/billing.dart';
-import 'package:rental_management_system_flutter/models/reading.dart';
-import 'package:rental_management_system_flutter/models/room.dart';
-import 'package:rental_management_system_flutter/models/tenant.dart';
+import 'package:m18_residences_admin/models/billing.dart';
+import 'package:m18_residences_admin/models/reading.dart';
+import 'package:m18_residences_admin/models/room.dart';
+import 'package:m18_residences_admin/models/tenant.dart';
 
 abstract class BillingState extends Equatable {
   @override

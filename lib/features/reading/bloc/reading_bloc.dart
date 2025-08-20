@@ -1,9 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'reading_event.dart';
 import 'reading_state.dart';
-import 'package:rental_management_system_flutter/services/reading_service.dart';
-import 'package:rental_management_system_flutter/services/room_service.dart';
-import 'package:rental_management_system_flutter/services/tenant_service.dart';
+import 'package:m18_residences_admin/services/reading_service.dart';
+import 'package:m18_residences_admin/services/room_service.dart';
+import 'package:m18_residences_admin/services/tenant_service.dart';
 
 class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
   final ReadingService readingService;

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
-import 'package:rental_management_system_flutter/features/login/login_page.dart';
+import 'package:m18_residences_admin/features/auth/auth_bloc.dart';
+import 'package:m18_residences_admin/features/auth/auth_event.dart';
+import 'package:m18_residences_admin/features/login/login_page.dart';
 
 Widget buildErrorWidget({required BuildContext context, required String message, VoidCallback? onRetry}) {
   return Center(

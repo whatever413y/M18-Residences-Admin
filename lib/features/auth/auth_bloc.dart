@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rental_management_system_flutter/models/admin.dart';
-import 'package:rental_management_system_flutter/services/auth_service.dart';
+import 'package:m18_residences_admin/models/admin.dart';
+import 'package:m18_residences_admin/services/auth_service.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 

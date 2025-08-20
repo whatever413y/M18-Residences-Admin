@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
-import 'package:rental_management_system_flutter/models/billing.dart';
+import 'package:m18_residences_admin/models/billing.dart';
 
 abstract class BillingEvent extends Equatable {
   const BillingEvent();

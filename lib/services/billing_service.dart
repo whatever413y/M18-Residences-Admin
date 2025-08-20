@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:http_parser/http_parser.dart';
-import 'package:rental_management_system_flutter/models/additional_charges.dart';
-import 'package:rental_management_system_flutter/models/billing.dart';
+import 'package:m18_residences_admin/models/additional_charges.dart';
+import 'package:m18_residences_admin/models/billing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
