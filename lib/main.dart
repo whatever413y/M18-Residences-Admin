@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:m18_residences_admin/bloc_providers.dart';
 import 'features/login/login_page.dart';
 import 'theme.dart';
