@@ -1,13 +1,13 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
-import 'package:rental_management_system_flutter/models/billing.dart';
-import 'package:rental_management_system_flutter/models/reading.dart';
-import 'package:rental_management_system_flutter/models/room.dart';
-import 'package:rental_management_system_flutter/models/tenant.dart';
-import 'package:rental_management_system_flutter/services/billing_service.dart';
-import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
-import 'package:rental_management_system_flutter/utils/shared_widgets.dart';
+import 'package:m18_residences_admin/features/auth/auth_bloc.dart';
+import 'package:m18_residences_admin/models/billing.dart';
+import 'package:m18_residences_admin/models/reading.dart';
+import 'package:m18_residences_admin/models/room.dart';
+import 'package:m18_residences_admin/models/tenant.dart';
+import 'package:m18_residences_admin/services/billing_service.dart';
+import 'package:m18_residences_admin/utils/custom_form_field.dart';
+import 'package:m18_residences_admin/utils/shared_widgets.dart';
 
 class AdditionalChargeInput {
   int amount;

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
-import 'package:rental_management_system_flutter/features/billing/billings_page.dart';
-import 'package:rental_management_system_flutter/features/home/widgets/square_button.dart';
-import 'package:rental_management_system_flutter/features/reading/readings_page.dart';
-import 'package:rental_management_system_flutter/features/room/rooms_page.dart';
-import 'package:rental_management_system_flutter/features/tenants/tenants_page.dart';
-import 'package:rental_management_system_flutter/theme.dart';
-import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
-import 'package:rental_management_system_flutter/utils/error_widget.dart';
+import 'package:m18_residences_admin/features/auth/auth_bloc.dart';
+import 'package:m18_residences_admin/features/auth/auth_event.dart';
+import 'package:m18_residences_admin/features/auth/auth_state.dart';
+import 'package:m18_residences_admin/features/billing/billings_page.dart';
+import 'package:m18_residences_admin/features/home/widgets/square_button.dart';
+import 'package:m18_residences_admin/features/reading/readings_page.dart';
+import 'package:m18_residences_admin/features/room/rooms_page.dart';
+import 'package:m18_residences_admin/features/tenants/tenants_page.dart';
+import 'package:m18_residences_admin/theme.dart';
+import 'package:m18_residences_admin/utils/custom_app_bar.dart';
+import 'package:m18_residences_admin/utils/error_widget.dart';
 
 class HomePage extends StatefulWidget {
   @override

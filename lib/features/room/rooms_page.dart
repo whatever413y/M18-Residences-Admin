@@ -1,21 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
-import 'package:rental_management_system_flutter/models/room.dart';
-import 'package:rental_management_system_flutter/features/room/bloc/room_bloc.dart';
-import 'package:rental_management_system_flutter/features/room/bloc/room_event.dart';
-import 'package:rental_management_system_flutter/features/room/bloc/room_state.dart';
-import 'package:rental_management_system_flutter/features/room/widgets/room_card.dart';
-import 'package:rental_management_system_flutter/features/room/widgets/room_form_dialog.dart';
-import 'package:rental_management_system_flutter/theme.dart';
-import 'package:rental_management_system_flutter/utils/confirmation_action.dart';
-import 'package:rental_management_system_flutter/utils/custom_add_button.dart';
-import 'package:rental_management_system_flutter/utils/custom_app_bar.dart';
-import 'package:rental_management_system_flutter/utils/custom_snackbar.dart';
-import 'package:rental_management_system_flutter/utils/error_widget.dart';
+import 'package:m18_residences_admin/features/auth/auth_bloc.dart';
+import 'package:m18_residences_admin/features/auth/auth_event.dart';
+import 'package:m18_residences_admin/features/auth/auth_state.dart';
+import 'package:m18_residences_admin/models/room.dart';
+import 'package:m18_residences_admin/features/room/bloc/room_bloc.dart';
+import 'package:m18_residences_admin/features/room/bloc/room_event.dart';
+import 'package:m18_residences_admin/features/room/bloc/room_state.dart';
+import 'package:m18_residences_admin/features/room/widgets/room_card.dart';
+import 'package:m18_residences_admin/features/room/widgets/room_form_dialog.dart';
+import 'package:m18_residences_admin/theme.dart';
+import 'package:m18_residences_admin/utils/confirmation_action.dart';
+import 'package:m18_residences_admin/utils/custom_add_button.dart';
+import 'package:m18_residences_admin/utils/custom_app_bar.dart';
+import 'package:m18_residences_admin/utils/custom_snackbar.dart';
+import 'package:m18_residences_admin/utils/error_widget.dart';
 
 class RoomsPage extends StatefulWidget {
   const RoomsPage({super.key});

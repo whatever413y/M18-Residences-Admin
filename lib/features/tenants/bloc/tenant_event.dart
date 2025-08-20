@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
-import 'package:rental_management_system_flutter/models/tenant.dart';
+import 'package:m18_residences_admin/models/tenant.dart';
 
 abstract class TenantEvent extends Equatable {
   @override

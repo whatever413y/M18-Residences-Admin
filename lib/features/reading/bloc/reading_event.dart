@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:rental_management_system_flutter/models/reading.dart';
+import 'package:m18_residences_admin/models/reading.dart';
 
 abstract class ReadingEvent {}
 

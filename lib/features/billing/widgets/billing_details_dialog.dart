@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:rental_management_system_flutter/models/additional_charges.dart';
-import 'package:rental_management_system_flutter/models/billing.dart';
-import 'package:rental_management_system_flutter/utils/shared_widgets.dart';
+import 'package:m18_residences_admin/models/additional_charges.dart';
+import 'package:m18_residences_admin/models/billing.dart';
+import 'package:m18_residences_admin/utils/shared_widgets.dart';
 
 class BillingDetailsDialog extends StatelessWidget {
   final Bill bill;

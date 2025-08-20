@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_bloc.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_event.dart';
-import 'package:rental_management_system_flutter/features/auth/auth_state.dart';
-import 'package:rental_management_system_flutter/features/home/home_page.dart';
-import 'package:rental_management_system_flutter/features/login/widgets/loading_overlay.dart';
-import 'package:rental_management_system_flutter/theme.dart';
-import 'package:rental_management_system_flutter/utils/custom_form_field.dart';
+import 'package:m18_residences_admin/features/auth/auth_bloc.dart';
+import 'package:m18_residences_admin/features/auth/auth_event.dart';
+import 'package:m18_residences_admin/features/auth/auth_state.dart';
+import 'package:m18_residences_admin/features/home/home_page.dart';
+import 'package:m18_residences_admin/features/login/widgets/loading_overlay.dart';
+import 'package:m18_residences_admin/theme.dart';
+import 'package:m18_residences_admin/utils/custom_form_field.dart';
 
 class LoginPage extends StatefulWidget {
   @override

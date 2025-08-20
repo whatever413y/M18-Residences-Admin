@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rental_management_system_flutter/features/room/bloc/room_event.dart';
-import 'package:rental_management_system_flutter/features/room/bloc/room_state.dart';
-import 'package:rental_management_system_flutter/services/room_service.dart';
+import 'package:m18_residences_admin/features/room/bloc/room_event.dart';
+import 'package:m18_residences_admin/features/room/bloc/room_state.dart';
+import 'package:m18_residences_admin/services/room_service.dart';
 
 class RoomBloc extends Bloc<RoomEvent, RoomState> {
   final RoomService roomService;

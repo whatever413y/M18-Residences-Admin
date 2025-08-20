@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
-import 'package:rental_management_system_flutter/models/tenant.dart';
+import 'package:m18_residences_admin/models/tenant.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TenantService {

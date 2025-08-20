@@ -1,5 +1,5 @@
 import 'package:file_picker/file_picker.dart';
-import 'package:rental_management_system_flutter/models/additional_charges.dart';
+import 'package:m18_residences_admin/models/additional_charges.dart';
 
 class Bill {
   final int? id;
