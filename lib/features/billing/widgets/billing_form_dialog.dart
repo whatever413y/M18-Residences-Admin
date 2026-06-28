@@ -47,12 +47,11 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   final _formKey = GlobalKey<FormState>();
   final _roomChargesController = TextEditingController();
   final _electricChargesController = TextEditingController();
+  final _electricityRateController = TextEditingController(text: '17');
 
   List<AdditionalChargeInput> _additionalCharges = [];
   List<TextEditingController> _additionalChargeControllers = [];
   List<TextEditingController> _additionalDescControllers = [];
-
-  static const int electricityRate = 17;
 
   int? _selectedRoomId;
   int? _selectedTenantId;
@@ -65,15 +64,31 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     super.initState();
     final bill = widget.bill;
 
-    if (bill != null && bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty) {
-      _additionalCharges = bill.additionalCharges!.map((e) => AdditionalChargeInput(amount: e.amount, description: e.description)).toList();
+    if (bill != null &&
+        bill.additionalCharges != null &&
+        bill.additionalCharges!.isNotEmpty) {
+      _additionalCharges =
+          bill.additionalCharges!
+              .map(
+                (e) => AdditionalChargeInput(
+                  amount: e.amount,
+                  description: e.description,
+                ),
+              )
+              .toList();
     } else {
       _additionalCharges = [AdditionalChargeInput()];
     }
 
-    _additionalChargeControllers = _additionalCharges.map((e) => TextEditingController(text: e.amount.toString())).toList();
+    _additionalChargeControllers =
+        _additionalCharges
+            .map((e) => TextEditingController(text: e.amount.toString()))
+            .toList();
 
-    _additionalDescControllers = _additionalCharges.map((e) => TextEditingController(text: e.description)).toList();
+    _additionalDescControllers =
+        _additionalCharges
+            .map((e) => TextEditingController(text: e.description))
+            .toList();
 
     if (bill != null) {
       final tenant = widget.tenants.firstWhere((t) => t.id == bill.tenantId);
@@ -82,6 +97,14 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       _selectedReadingId = bill.readingId;
       _roomChargesController.text = bill.roomCharges.toString();
       _electricChargesController.text = bill.electricCharges.toString();
+      final reading = _getLatestReading(_selectedRoomId, _selectedTenantId);
+      final impliedRate =
+          bill.electricCharges > 0 &&
+                  reading != null &&
+                  (reading.consumption ?? 0) > 0
+              ? (bill.electricCharges / (reading.consumption ?? 1)).round()
+              : 17;
+      _electricityRateController.text = impliedRate.toString();
       _receiptUrl = bill.receiptUrl;
     } else {
       _selectedRoomId = widget.selectedRoomId;
@@ -96,6 +119,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   void dispose() {
     _roomChargesController.dispose();
     _electricChargesController.dispose();
+    _electricityRateController.dispose();
 
     for (final c in _additionalChargeControllers) {
       c.dispose();
@@ -108,7 +132,11 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   }
 
   Future<void> _pickReceiptFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg'], withData: true);
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['png', 'jpg', 'jpeg'],
+      withData: true,
+    );
 
     if (result != null && result.files.isNotEmpty) {
       setState(() {
@@ -125,7 +153,10 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     if (roomId == null || tenantId == null) return null;
 
     final filteredReadings =
-        widget.readings.where((r) => r.roomId == roomId && r.tenantId == tenantId).toList()..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+        widget.readings
+            .where((r) => r.roomId == roomId && r.tenantId == tenantId)
+            .toList()
+          ..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
 
     return filteredReadings.isNotEmpty ? filteredReadings.first : null;
   }
@@ -140,10 +171,14 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     final reading = _getLatestReading(_selectedRoomId, _selectedTenantId);
     _selectedReadingId = reading?.id;
 
-    final room = widget.rooms.firstWhere((r) => r.id == _selectedRoomId, orElse: () => Room(id: 0, name: '', rent: 0));
+    final room = widget.rooms.firstWhere(
+      (r) => r.id == _selectedRoomId,
+      orElse: () => Room(id: 0, name: '', rent: 0),
+    );
 
     final roomCharges = room.rent.toInt();
     final electricConsumption = reading?.consumption ?? 0;
+    final electricityRate = int.tryParse(_electricityRateController.text) ?? 17;
     final electricCharges = electricConsumption * electricityRate;
 
     _roomChargesController.text = roomCharges.toString();
@@ -215,7 +250,10 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   }
 
   Widget _buildUploadButton() {
-    final tenantName = _selectedTenantId != null ? widget.tenants.firstWhere((t) => t.id == _selectedTenantId!).name : '';
+    final tenantName =
+        _selectedTenantId != null
+            ? widget.tenants.firstWhere((t) => t.id == _selectedTenantId!).name
+            : '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,12 +265,25 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
             });
           },
           icon: Icon(Icons.attach_file),
-          label: Text((_receiptFile == null && (_receiptUrl == null || _receiptUrl!.isEmpty)) ? 'Attach Receipt' : 'Change Receipt'),
+          label: Text(
+            (_receiptFile == null &&
+                    (_receiptUrl == null || _receiptUrl!.isEmpty))
+                ? 'Attach Receipt'
+                : 'Change Receipt',
+          ),
         ),
 
         if (_receiptFile != null)
-          Padding(padding: const EdgeInsets.only(top: 8), child: Text(_receiptFile!.name, style: const TextStyle(fontStyle: FontStyle.italic)))
-        else if (_receiptUrl != null && _receiptUrl!.isNotEmpty && _selectedTenantId != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              _receiptFile!.name,
+              style: const TextStyle(fontStyle: FontStyle.italic),
+            ),
+          )
+        else if (_receiptUrl != null &&
+            _receiptUrl!.isNotEmpty &&
+            _selectedTenantId != null)
           buildReceipt(context, tenantName, _receiptUrl!),
       ],
     );
@@ -250,14 +301,24 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
               child: CustomTextFormField(
                 controller: _additionalChargeControllers[index],
                 labelText: 'Additional Charge',
-                keyboardType: const TextInputType.numberWithOptions(signed: false),
+                keyboardType: const TextInputType.numberWithOptions(
+                  signed: false,
+                ),
                 prefixIcon: Padding(
                   padding: const EdgeInsets.all(12.0),
-                  child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    '₱',
+                    style: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 validator: (value) {
                   final amount = int.tryParse(value ?? '') ?? 0;
-                  final description = _additionalDescControllers[index].text.trim();
+                  final description =
+                      _additionalDescControllers[index].text.trim();
 
                   if (description.isNotEmpty && amount == 0) {
                     return 'Please fill in an amount';
@@ -280,7 +341,9 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
                 keyboardType: TextInputType.text,
                 validator: (value) {
                   final description = value?.trim() ?? '';
-                  final amount = int.tryParse(_additionalChargeControllers[index].text) ?? 0;
+                  final amount =
+                      int.tryParse(_additionalChargeControllers[index].text) ??
+                      0;
 
                   if (description.isNotEmpty && amount == 0) {
                     return 'Please fill in an amount';
@@ -326,18 +389,34 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
                         CustomTextFormField(
                           controller: _additionalChargeControllers[index],
                           labelText: 'Additional Charge',
-                          keyboardType: const TextInputType.numberWithOptions(signed: false),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            signed: false,
+                          ),
                           prefixIcon: Padding(
                             padding: const EdgeInsets.all(12.0),
-                            child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
+                            child: Text(
+                              '₱',
+                              style: TextStyle(
+                                color: Theme.of(context).primaryColor,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                           validator: (value) {
                             final amount = int.tryParse(value ?? '') ?? 0;
-                            final description = _additionalDescControllers[index].text.trim();
+                            final description =
+                                _additionalDescControllers[index].text.trim();
 
-                            if (amount < 0) return 'Enter a valid number';
-                            if (amount > 0 && description.isEmpty) return 'Description is required';
-                            if (description.isNotEmpty && amount <= 0) return 'Please fill in an amount';
+                            if (amount < 0) {
+                              return 'Enter a valid number';
+                            }
+                            if (amount > 0 && description.isEmpty) {
+                              return 'Description is required';
+                            }
+                            if (description.isNotEmpty && amount <= 0) {
+                              return 'Please fill in an amount';
+                            }
                             return null;
                           },
                         ),
@@ -348,11 +427,21 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
                           keyboardType: TextInputType.text,
                           validator: (value) {
                             final description = value?.trim() ?? '';
-                            final amount = int.tryParse(_additionalChargeControllers[index].text) ?? 0;
+                            final amount =
+                                int.tryParse(
+                                  _additionalChargeControllers[index].text,
+                                ) ??
+                                0;
 
-                            if (description.isNotEmpty && amount <= 0) return 'Please fill in an amount';
-                            if (amount > 0 && description.isEmpty) return 'Description is required';
-                            if (description.length > 200) return 'Description too long';
+                            if (description.isNotEmpty && amount <= 0) {
+                              return 'Please fill in an amount';
+                            }
+                            if (amount > 0 && description.isEmpty) {
+                              return 'Description is required';
+                            }
+                            if (description.length > 200) {
+                              return 'Description too long';
+                            }
                             return null;
                           },
                         ),
@@ -360,7 +449,10 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: IconButton(
-                              icon: const Icon(Icons.remove_circle, color: Colors.red),
+                              icon: const Icon(
+                                Icons.remove_circle,
+                                color: Colors.red,
+                              ),
                               onPressed: () {
                                 setState(() {
                                   _additionalCharges.removeAt(index);
@@ -396,7 +488,10 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
 
   List<Widget> _buildActions(BuildContext context, bool isEditing) {
     return [
-      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Cancel'),
+      ),
       ElevatedButton(
         onPressed: _submit,
         style: ElevatedButton.styleFrom(
@@ -449,20 +544,67 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       enabled: false,
       prefixIcon: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
+        child: Text(
+          '₱',
+          style: TextStyle(
+            color: Theme.of(context).primaryColor,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildElectricChargesField() {
-    return CustomTextFormField(
-      controller: _electricChargesController,
-      labelText: 'Electric Charges',
-      enabled: false,
-      prefixIcon: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
-      ),
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: CustomTextFormField(
+            controller: _electricChargesController,
+            labelText: 'Electric Charges',
+            enabled: false,
+            prefixIcon: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Text(
+                '₱',
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 2,
+          child: CustomTextFormField(
+            controller: _electricityRateController,
+            labelText: 'Electricity Rate',
+            keyboardType: const TextInputType.numberWithOptions(signed: false),
+            prefixIcon: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Text(
+                '₱',
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            validator: (value) {
+              final rate = int.tryParse(value ?? '') ?? 0;
+              if (rate < 0) return 'Enter a valid number';
+              return null;
+            },
+            onChanged: (_) => _updateCharges(),
+          ),
+        ),
+      ],
     );
   }
 }

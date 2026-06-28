@@ -89,7 +89,7 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
           _isActive = val;
         });
       },
-      activeColor: Theme.of(context).primaryColor,
+      activeThumbColor: Theme.of(context).primaryColor,
     );
   }
 

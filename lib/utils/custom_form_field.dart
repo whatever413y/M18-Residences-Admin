@@ -12,6 +12,7 @@ class CustomTextFormField extends StatelessWidget {
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final void Function(String)? onFieldSubmitted;
+  final ValueChanged<String>? onChanged;
   final bool obscureText;
   final int errorMaxLines;
 
@@ -28,6 +29,7 @@ class CustomTextFormField extends StatelessWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.onFieldSubmitted,
+    this.onChanged,
     this.obscureText = false,
     this.errorMaxLines = 2,
   });
@@ -45,8 +47,14 @@ class CustomTextFormField extends StatelessWidget {
       maxLines: maxLines,
       enabled: enabled,
       onFieldSubmitted: onFieldSubmitted,
+      onChanged: onChanged,
       obscureText: obscureText,
-      decoration: InputDecoration(labelText: labelText, prefixIcon: prefixIcon, suffixIcon: suffixIcon, errorMaxLines: errorMaxLines),
+      decoration: InputDecoration(
+        labelText: labelText,
+        prefixIcon: prefixIcon,
+        suffixIcon: suffixIcon,
+        errorMaxLines: errorMaxLines,
+      ),
       style: theme.textTheme.bodyMedium,
     );
   }
