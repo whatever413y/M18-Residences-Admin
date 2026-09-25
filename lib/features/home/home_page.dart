@@ -8,9 +8,7 @@ import 'package:m18_residences_admin/features/home/widgets/square_button.dart';
 import 'package:m18_residences_admin/features/reading/readings_page.dart';
 import 'package:m18_residences_admin/features/room/rooms_page.dart';
 import 'package:m18_residences_admin/features/tenants/tenants_page.dart';
-import 'package:m18_residences_admin/theme.dart';
-import 'package:m18_residences_admin/utils/custom_app_bar.dart';
-import 'package:m18_residences_admin/utils/error_widget.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -48,7 +46,7 @@ class HomePageState extends State<HomePage> {
         body: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
             if (state is Unauthenticated) {
-              return buildErrorWidget(context: context, message: state.message);
+              return ErrorView(message: state.message);
             }
 
             return Container(

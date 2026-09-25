@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:m18_residences_admin/models/room.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 class RoomCard extends StatelessWidget {
   final Room room;
@@ -32,8 +32,14 @@ class RoomCard extends StatelessWidget {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: onEdit),
-                IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: onDelete),
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: onEdit,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: onDelete,
+                ),
               ],
             ),
           ],

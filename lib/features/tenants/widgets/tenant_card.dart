@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:m18_residences_admin/models/tenant.dart';
-import 'package:m18_residences_admin/models/room.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 class TenantCard extends StatelessWidget {
   final Tenant tenant;
@@ -37,8 +36,14 @@ class TenantCard extends StatelessWidget {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(icon: Icon(Icons.edit, color: Colors.blue), onPressed: onEdit),
-                IconButton(icon: Icon(Icons.delete, color: Colors.red), onPressed: onDelete),
+                IconButton(
+                  icon: Icon(Icons.edit, color: Colors.blue),
+                  onPressed: onEdit,
+                ),
+                IconButton(
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  onPressed: onDelete,
+                ),
               ],
             ),
           ],

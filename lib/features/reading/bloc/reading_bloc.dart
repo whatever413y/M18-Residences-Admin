@@ -1,16 +1,15 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:m18_shared/m18_shared.dart';
+
 import 'reading_event.dart';
 import 'reading_state.dart';
-import 'package:m18_residences_admin/services/reading_service.dart';
-import 'package:m18_residences_admin/services/room_service.dart';
-import 'package:m18_residences_admin/services/tenant_service.dart';
 
 class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
-  final ReadingService readingService;
-  final RoomService roomService;
-  final TenantService tenantService;
+  final ReadingApi readingApi;
+  final RoomApi roomApi;
+  final TenantApi tenantApi;
 
-  ReadingBloc({required this.readingService, required this.roomService, required this.tenantService}) : super(ReadingInitial()) {
+  ReadingBloc({required this.readingApi, required this.roomApi, required this.tenantApi}) : super(ReadingInitial()) {
     on<LoadReadings>(_onLoadReadings);
     on<AddReading>(_onAddReading);
     on<UpdateReading>(_onUpdateReading);
@@ -20,9 +19,9 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
   Future<void> _onLoadReadings(LoadReadings event, Emitter<ReadingState> emit) async {
     emit(ReadingLoading());
     try {
-      final readings = await readingService.fetchReadings();
-      final rooms = await roomService.fetchRooms();
-      final tenants = await tenantService.fetchTenants();
+      final readings = await readingApi.list();
+      final rooms = await roomApi.list();
+      final tenants = await tenantApi.list();
       emit(ReadingLoaded(readings, rooms, tenants));
     } catch (e) {
       emit(ReadingError('Failed to load readings: $e'));
@@ -31,12 +30,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
 
   Future<void> _onAddReading(AddReading event, Emitter<ReadingState> emit) async {
     try {
-      await readingService.createReading(
-        roomId: event.reading.roomId,
-        tenantId: event.reading.tenantId,
-        prevReading: event.reading.prevReading,
-        currReading: event.reading.currReading,
-      );
+      await readingApi.create(event.request);
       add(LoadReadings());
       emit(AddSuccess());
     } catch (e) {
@@ -46,13 +40,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
 
   Future<void> _onUpdateReading(UpdateReading event, Emitter<ReadingState> emit) async {
     try {
-      await readingService.updateReading(
-        id: event.reading.id!,
-        roomId: event.reading.roomId,
-        tenantId: event.reading.tenantId,
-        prevReading: event.reading.prevReading,
-        currReading: event.reading.currReading,
-      );
+      await readingApi.update(event.id, event.request);
       add(LoadReadings());
       emit(UpdateSuccess());
     } catch (e) {
@@ -62,7 +50,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
 
   Future<void> _onDeleteReading(DeleteReading event, Emitter<ReadingState> emit) async {
     try {
-      await readingService.deleteReading(event.id);
+      await readingApi.delete(event.id);
       event.onComplete.complete();
       add(LoadReadings());
       emit(DeleteSuccess());

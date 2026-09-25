@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
-import 'package:m18_residences_admin/models/room.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 abstract class RoomEvent extends Equatable {
   @override
@@ -11,21 +11,22 @@ abstract class RoomEvent extends Equatable {
 class LoadRooms extends RoomEvent {}
 
 class AddRoom extends RoomEvent {
-  final Room room;
+  final RoomRequest request;
 
-  AddRoom(this.room);
+  AddRoom(this.request);
 
   @override
-  List<Object?> get props => [room];
+  List<Object?> get props => [request];
 }
 
 class UpdateRoom extends RoomEvent {
-  final Room room;
+  final int id;
+  final RoomRequest request;
 
-  UpdateRoom(this.room);
+  UpdateRoom(this.id, this.request);
 
   @override
-  List<Object?> get props => [room];
+  List<Object?> get props => [id, request];
 }
 
 class DeleteRoom extends RoomEvent {

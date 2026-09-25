@@ -6,13 +6,7 @@ class SquareButton extends StatelessWidget {
   final VoidCallback onTap;
   final Color color;
 
-  const SquareButton({
-    super.key,
-    required this.text,
-    required this.icon,
-    required this.onTap,
-    required this.color,
-  });
+  const SquareButton({super.key, required this.text, required this.icon, required this.onTap, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -24,13 +18,7 @@ class SquareButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 8,
-              offset: Offset(0, 4),
-            ),
-          ],
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -40,11 +28,7 @@ class SquareButton extends StatelessWidget {
             Text(
               text,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
             ),
           ],
         ),

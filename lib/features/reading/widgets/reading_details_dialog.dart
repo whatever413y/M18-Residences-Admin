@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/reading.dart';
+import 'package:m18_shared/m18_shared.dart';
 import 'package:intl/intl.dart';
 
 class ReadingDetailsDialog extends StatelessWidget {
@@ -8,13 +8,7 @@ class ReadingDetailsDialog extends StatelessWidget {
   final String Function(int roomId) getRoomName;
   final DateFormat dateFormat;
 
-  const ReadingDetailsDialog({
-    super.key,
-    required this.reading,
-    required this.getTenantName,
-    required this.getRoomName,
-    required this.dateFormat,
-  });
+  const ReadingDetailsDialog({super.key, required this.reading, required this.getTenantName, required this.getRoomName, required this.dateFormat});
 
   Widget _buildDetailRow(String label, String value) {
     return Row(
@@ -39,9 +33,7 @@ class ReadingDetailsDialog extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 400),
         child: Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 12,
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -67,11 +59,7 @@ class ReadingDetailsDialog extends StatelessWidget {
   Widget _buildTitle() {
     return Text(
       'Reading Details',
-      style: TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.bold,
-        color: Colors.blue.shade800,
-      ),
+      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
     );
   }
 
@@ -93,7 +81,7 @@ class ReadingDetailsDialog extends StatelessWidget {
         const SizedBox(height: 12),
         _buildDetailRow('Consumption', '${reading.consumption} kWh'),
         const SizedBox(height: 12),
-        _buildDetailRow('Date', dateFormat.format(reading.createdAt!)),
+        _buildDetailRow('Date', dateFormat.format(reading.createdAt)),
       ],
     );
   }
@@ -108,10 +96,7 @@ class ReadingDetailsDialog extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text(
-          'Close',
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
+        child: const Text('Close', style: TextStyle(color: Colors.white, fontSize: 16)),
       ),
     );
   }

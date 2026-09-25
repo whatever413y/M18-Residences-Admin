@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:m18_residences_admin/models/room.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 abstract class RoomState extends Equatable {
   @override

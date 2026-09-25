@@ -1,13 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:m18_residences_admin/features/auth/auth_bloc.dart';
-import 'package:m18_residences_admin/models/billing.dart';
-import 'package:m18_residences_admin/models/reading.dart';
-import 'package:m18_residences_admin/models/room.dart';
-import 'package:m18_residences_admin/models/tenant.dart';
-import 'package:m18_residences_admin/services/billing_service.dart';
-import 'package:m18_residences_admin/utils/custom_form_field.dart';
 import 'package:m18_residences_admin/utils/shared_widgets.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 class AdditionalChargeInput {
   int amount;
@@ -21,7 +15,6 @@ class BillingFormDialog extends StatefulWidget {
   final List<Room> rooms;
   final List<Tenant> tenants;
   final List<Reading> readings;
-  final BillingService billingService;
   final int? selectedRoomId;
   final int? selectedTenantId;
   final bool showActiveOnly;
@@ -32,7 +25,6 @@ class BillingFormDialog extends StatefulWidget {
     required this.rooms,
     required this.tenants,
     required this.readings,
-    required this.billingService,
     required this.showActiveOnly,
     required this.selectedRoomId,
     required this.selectedTenantId,
@@ -43,7 +35,6 @@ class BillingFormDialog extends StatefulWidget {
 }
 
 class _BillingFormDialogState extends State<BillingFormDialog> {
-  late AuthBloc authBloc;
   final _formKey = GlobalKey<FormState>();
   final _roomChargesController = TextEditingController();
   final _electricChargesController = TextEditingController();
@@ -64,8 +55,8 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     super.initState();
     final bill = widget.bill;
 
-    if (bill != null && bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty) {
-      _additionalCharges = bill.additionalCharges!.map((e) => AdditionalChargeInput(amount: e.amount, description: e.description)).toList();
+    if (bill != null && bill.additionalCharges.isNotEmpty) {
+      _additionalCharges = bill.additionalCharges.map((e) => AdditionalChargeInput(amount: e.amount, description: e.description)).toList();
     } else {
       _additionalCharges = [AdditionalChargeInput()];
     }
@@ -112,24 +103,19 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   }
 
   Future<void> _pickReceiptFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg'], withData: true);
+    // null when the picker is cancelled, which also clears a previously picked file.
+    final file = await FilePicker.pickFile(type: FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg']);
 
-    if (result != null && result.files.isNotEmpty) {
-      setState(() {
-        _receiptFile = result.files.first;
-      });
-    } else {
-      setState(() {
-        _receiptFile = null;
-      });
-    }
+    setState(() {
+      _receiptFile = file;
+    });
   }
 
   Reading? _getLatestReading(int? roomId, int? tenantId) {
     if (roomId == null || tenantId == null) return null;
 
-    final filteredReadings =
-        widget.readings.where((r) => r.roomId == roomId && r.tenantId == tenantId).toList()..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+    final filteredReadings = widget.readings.where((r) => r.roomId == roomId && r.tenantId == tenantId).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     return filteredReadings.isNotEmpty ? filteredReadings.first : null;
   }
@@ -150,7 +136,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     if (reading == null) return 0;
 
     final explicitConsumption = reading.consumption;
-    if (explicitConsumption != null && explicitConsumption > 0) {
+    if (explicitConsumption > 0) {
       return explicitConsumption;
     }
 
@@ -260,13 +246,20 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ElevatedButton.icon(
-          onPressed: _pickReceiptFile,
+          onPressed: () {
+            Future.microtask(() async {
+              await _pickReceiptFile();
+            });
+          },
           icon: Icon(Icons.attach_file),
           label: Text((_receiptFile == null && (_receiptUrl == null || _receiptUrl!.isEmpty)) ? 'Attach Receipt' : 'Change Receipt'),
         ),
 
         if (_receiptFile != null)
-          Padding(padding: const EdgeInsets.only(top: 8), child: Text(_receiptFile!.name, style: const TextStyle(fontStyle: FontStyle.italic)))
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(_receiptFile!.name, style: const TextStyle(fontStyle: FontStyle.italic)),
+          )
         else if (_receiptUrl != null && _receiptUrl!.isNotEmpty && _selectedTenantId != null)
           buildReceipt(context, tenantName, _receiptUrl!),
       ],
@@ -285,10 +278,14 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
               child: CustomTextFormField(
                 controller: _additionalChargeControllers[index],
                 labelText: 'Additional Charge',
+                semanticsId: 'bill-charge-amount-$index',
                 keyboardType: const TextInputType.numberWithOptions(signed: false),
                 prefixIcon: Padding(
                   padding: const EdgeInsets.all(12.0),
-                  child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    '₱',
+                    style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 validator: (value) {
                   final amount = int.tryParse(value ?? '') ?? 0;
@@ -312,6 +309,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
               child: CustomTextFormField(
                 controller: _additionalDescControllers[index],
                 labelText: 'Description',
+                semanticsId: 'bill-charge-description-$index',
                 keyboardType: TextInputType.text,
                 validator: (value) {
                   final description = value?.trim() ?? '';
@@ -352,89 +350,97 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child:
-                isWide
-                    ? Row(children: fields)
-                    : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CustomTextFormField(
-                          controller: _additionalChargeControllers[index],
-                          labelText: 'Additional Charge',
-                          keyboardType: const TextInputType.numberWithOptions(signed: false),
-                          prefixIcon: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
+            child: isWide
+                ? Row(children: fields)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CustomTextFormField(
+                        controller: _additionalChargeControllers[index],
+                        labelText: 'Additional Charge',
+                        semanticsId: 'bill-charge-amount-$index',
+                        keyboardType: const TextInputType.numberWithOptions(signed: false),
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Text(
+                            '₱',
+                            style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold),
                           ),
-                          validator: (value) {
-                            final amount = int.tryParse(value ?? '') ?? 0;
-                            final description = _additionalDescControllers[index].text.trim();
-
-                            if (amount < 0) {
-                              return 'Enter a valid number';
-                            }
-                            if (amount > 0 && description.isEmpty) {
-                              return 'Description is required';
-                            }
-                            if (description.isNotEmpty && amount <= 0) {
-                              return 'Please fill in an amount';
-                            }
-                            return null;
-                          },
                         ),
-                        const SizedBox(height: 12),
-                        CustomTextFormField(
-                          controller: _additionalDescControllers[index],
-                          labelText: 'Description',
-                          keyboardType: TextInputType.text,
-                          validator: (value) {
-                            final description = value?.trim() ?? '';
-                            final amount = int.tryParse(_additionalChargeControllers[index].text) ?? 0;
+                        validator: (value) {
+                          final amount = int.tryParse(value ?? '') ?? 0;
+                          final description = _additionalDescControllers[index].text.trim();
 
-                            if (description.isNotEmpty && amount <= 0) {
-                              return 'Please fill in an amount';
-                            }
-                            if (amount > 0 && description.isEmpty) {
-                              return 'Description is required';
-                            }
-                            if (description.length > 200) {
-                              return 'Description too long';
-                            }
-                            return null;
-                          },
-                        ),
-                        if (_additionalCharges.length > 1)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: IconButton(
-                              icon: const Icon(Icons.remove_circle, color: Colors.red),
-                              onPressed: () {
-                                setState(() {
-                                  _additionalCharges.removeAt(index);
-                                  _additionalChargeControllers[index].dispose();
-                                  _additionalDescControllers[index].dispose();
-                                  _additionalChargeControllers.removeAt(index);
-                                  _additionalDescControllers.removeAt(index);
-                                });
-                              },
-                            ),
+                          if (amount < 0) {
+                            return 'Enter a valid number';
+                          }
+                          if (amount > 0 && description.isEmpty) {
+                            return 'Description is required';
+                          }
+                          if (description.isNotEmpty && amount <= 0) {
+                            return 'Please fill in an amount';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      CustomTextFormField(
+                        controller: _additionalDescControllers[index],
+                        labelText: 'Description',
+                        semanticsId: 'bill-charge-description-$index',
+                        keyboardType: TextInputType.text,
+                        validator: (value) {
+                          final description = value?.trim() ?? '';
+                          final amount = int.tryParse(_additionalChargeControllers[index].text) ?? 0;
+
+                          if (description.isNotEmpty && amount <= 0) {
+                            return 'Please fill in an amount';
+                          }
+                          if (amount > 0 && description.isEmpty) {
+                            return 'Description is required';
+                          }
+                          if (description.length > 200) {
+                            return 'Description too long';
+                          }
+                          return null;
+                        },
+                      ),
+                      if (_additionalCharges.length > 1)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: IconButton(
+                            icon: const Icon(Icons.remove_circle, color: Colors.red),
+                            onPressed: () {
+                              setState(() {
+                                _additionalCharges.removeAt(index);
+                                _additionalChargeControllers[index].dispose();
+                                _additionalDescControllers[index].dispose();
+                                _additionalChargeControllers.removeAt(index);
+                                _additionalDescControllers.removeAt(index);
+                              });
+                            },
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
+                  ),
           );
         }),
         Align(
           alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: () {
-              setState(() {
-                _additionalCharges.add(AdditionalChargeInput());
-                _additionalChargeControllers.add(TextEditingController());
-                _additionalDescControllers.add(TextEditingController());
-              });
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Add Additional Charge'),
+          child: Semantics(
+            container: true,
+            identifier: 'bill-add-charge',
+            child: TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _additionalCharges.add(AdditionalChargeInput());
+                  _additionalChargeControllers.add(TextEditingController());
+                  _additionalDescControllers.add(TextEditingController());
+                });
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Add Additional Charge'),
+            ),
           ),
         ),
       ],
@@ -444,13 +450,17 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   List<Widget> _buildActions(BuildContext context, bool isEditing) {
     return [
       TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-      ElevatedButton(
-        onPressed: _submit,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      Semantics(
+        container: true,
+        identifier: 'bill-save',
+        child: ElevatedButton(
+          onPressed: _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).primaryColor,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          ),
+          child: Text(widget.bill == null ? 'Generate Bill' : 'Update Bill'),
         ),
-        child: Text(widget.bill == null ? 'Generate Bill' : 'Update Bill'),
       ),
     ];
   }
@@ -474,6 +484,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   Widget _buildTenantDropdown() {
     return buildTenantFilter(
       label: 'Select Tenant',
+      semanticsId: 'bill-tenant',
       tenants: widget.tenants,
       readings: widget.readings,
       selectedRoomId: _selectedRoomId,
@@ -493,10 +504,14 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     return CustomTextFormField(
       controller: _roomChargesController,
       labelText: 'Room Charges',
+      semanticsId: 'bill-room-charges',
       enabled: false,
       prefixIcon: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
+        child: Text(
+          '₱',
+          style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -512,7 +527,10 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
             enabled: false,
             prefixIcon: Padding(
               padding: const EdgeInsets.all(12.0),
-              child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
+              child: Text(
+                '₱',
+                style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ),
@@ -522,10 +540,14 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
           child: CustomTextFormField(
             controller: _electricityRateController,
             labelText: 'Electricity Rate',
+            semanticsId: 'bill-rate',
             keyboardType: const TextInputType.numberWithOptions(signed: false),
             prefixIcon: Padding(
               padding: const EdgeInsets.all(12.0),
-              child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
+              child: Text(
+                '₱',
+                style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
             ),
             validator: (value) {
               final rate = int.tryParse(value ?? '') ?? 0;

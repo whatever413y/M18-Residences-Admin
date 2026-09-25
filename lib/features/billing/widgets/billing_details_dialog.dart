@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:m18_residences_admin/models/additional_charges.dart';
-import 'package:m18_residences_admin/models/billing.dart';
 import 'package:m18_residences_admin/utils/shared_widgets.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 class BillingDetailsDialog extends StatelessWidget {
   final Bill bill;
@@ -40,7 +39,7 @@ class BillingDetailsDialog extends StatelessWidget {
                 const SizedBox(height: 16),
                 _buildDetails(),
                 const SizedBox(height: 24),
-                if (bill.receiptUrl != null && bill.receiptUrl!.isNotEmpty) buildReceipt(context, tenantName, bill.receiptUrl!),
+                if (bill.hasReceipt) buildReceipt(context, tenantName, bill.receiptUrl),
                 _spacer(),
                 _buildCloseButton(context),
               ],
@@ -52,7 +51,10 @@ class BillingDetailsDialog extends StatelessWidget {
   }
 
   Widget _buildTitle() {
-    return Text('Billing Details', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue.shade800));
+    return Text(
+      'Billing Details',
+      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
+    );
   }
 
   Widget _buildDivider() {
@@ -76,8 +78,8 @@ class BillingDetailsDialog extends StatelessWidget {
       _buildDetailRow('Room Charges', currencyFormat.format(bill.roomCharges)),
     ];
 
-    if (bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty) {
-      buildChargesDetails(detailRows, bill.additionalCharges!);
+    if (bill.additionalCharges.isNotEmpty) {
+      buildChargesDetails(detailRows, bill.additionalCharges);
     }
 
     detailRows.addAll([
@@ -98,7 +100,13 @@ class BillingDetailsDialog extends StatelessWidget {
       children: [
         Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(width: 16),
-        Expanded(child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w400))),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontWeight: FontWeight.w400),
+          ),
+        ),
       ],
     );
   }
@@ -134,7 +142,12 @@ class BillingDetailsDialog extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Expanded(child: Text(description.isNotEmpty ? description : '-', style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.grey))),
+          Expanded(
+            child: Text(
+              description.isNotEmpty ? description : '-',
+              style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+            ),
+          ),
           Text(amount),
         ],
       ),

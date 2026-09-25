@@ -9,26 +9,26 @@ import 'package:m18_residences_admin/features/room/bloc/room_bloc.dart';
 import 'package:m18_residences_admin/features/room/bloc/room_event.dart';
 import 'package:m18_residences_admin/features/tenants/bloc/tenant_bloc.dart';
 import 'package:m18_residences_admin/features/tenants/bloc/tenant_event.dart';
-import 'package:m18_residences_admin/services/auth_service.dart';
-import 'package:m18_residences_admin/services/billing_service.dart';
-import 'package:m18_residences_admin/services/reading_service.dart';
-import 'package:m18_residences_admin/services/room_service.dart';
-import 'package:m18_residences_admin/services/tenant_service.dart';
+import 'package:m18_shared/m18_shared.dart';
+
+/// One API client (and session store) shared by every endpoint wrapper.
+final ApiClient _apiClient = ApiClient(tokens: const TokenStore('admin_id'));
+final AuthApi _authApi = AuthApi(_apiClient);
+final BillApi _billApi = BillApi(_apiClient);
+final ReadingApi _readingApi = ReadingApi(_apiClient);
+final RoomApi _roomApi = RoomApi(_apiClient);
+final TenantApi _tenantApi = TenantApi(_apiClient);
 
 final List<BlocProvider> blocProviders = [
-  BlocProvider<AuthBloc>(create: (_) => AuthBloc(authService: AuthService())..add(CheckAuthStatus())),
-  BlocProvider<RoomBloc>(create: (_) => RoomBloc(RoomService())..add(LoadRooms())),
-  BlocProvider<TenantBloc>(create: (_) => TenantBloc(tenantService: TenantService(), roomService: RoomService())..add(LoadTenants())),
+  BlocProvider<AuthBloc>(create: (_) => AuthBloc(authApi: _authApi)..add(CheckAuthStatus())),
+  BlocProvider<RoomBloc>(create: (_) => RoomBloc(_roomApi)..add(LoadRooms())),
+  BlocProvider<TenantBloc>(
+    create: (_) => TenantBloc(tenantApi: _tenantApi, roomApi: _roomApi)..add(LoadTenants()),
+  ),
   BlocProvider<ReadingBloc>(
-    create: (_) => ReadingBloc(readingService: ReadingService(), roomService: RoomService(), tenantService: TenantService())..add(LoadReadings()),
+    create: (_) => ReadingBloc(readingApi: _readingApi, roomApi: _roomApi, tenantApi: _tenantApi)..add(LoadReadings()),
   ),
   BlocProvider<BillingBloc>(
-    create:
-        (_) => BillingBloc(
-          readingService: ReadingService(),
-          roomService: RoomService(),
-          tenantService: TenantService(),
-          billingService: BillingService(),
-        )..add(LoadBills()),
+    create: (_) => BillingBloc(readingApi: _readingApi, roomApi: _roomApi, tenantApi: _tenantApi, billApi: _billApi)..add(LoadBills()),
   ),
 ];

@@ -11,13 +11,7 @@ class CustomSnackbar {
     bool dismissPrevious = true,
   }) {
     final messenger = ScaffoldMessenger.of(context);
-    showWithMessenger(
-      messenger,
-      message,
-      type: type,
-      duration: duration,
-      dismissPrevious: dismissPrevious,
-    );
+    showWithMessenger(messenger, message, type: type, duration: duration, dismissPrevious: dismissPrevious);
   }
 
   static void showWithMessenger(
@@ -40,12 +34,7 @@ class CustomSnackbar {
     messenger.hideCurrentSnackBar();
   }
 
-  static SnackBar _buildSnackBar(
-    BuildContext context,
-    String message,
-    SnackBarType type,
-    Duration duration,
-  ) {
+  static SnackBar _buildSnackBar(BuildContext context, String message, SnackBarType type, Duration duration) {
     final theme = Theme.of(context);
 
     final Map<SnackBarType, Color> colorMap = {
@@ -61,40 +50,24 @@ class CustomSnackbar {
       SnackBarType.info: Icons.info_outline,
     };
 
-    final Color contentColor =
-        theme.snackBarTheme.contentTextStyle?.color ??
-        theme.colorScheme.onPrimary;
+    final Color contentColor = theme.snackBarTheme.contentTextStyle?.color ?? theme.colorScheme.onPrimary;
 
-    final Widget leading =
-        type == SnackBarType.loading
-            ? SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(contentColor),
-              ),
-            )
-            : Icon(iconMap[type], color: contentColor);
+    final Widget leading = type == SnackBarType.loading
+        ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(contentColor)))
+        : Icon(iconMap[type], color: contentColor);
 
     return SnackBar(
       behavior: SnackBarBehavior.floating,
       backgroundColor: colorMap[type],
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.all(16),
-      duration:
-          type == SnackBarType.loading ? const Duration(hours: 1) : duration,
+      duration: type == SnackBarType.loading ? const Duration(hours: 1) : duration,
       content: Row(
         children: [
           leading,
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              message,
-              style:
-                  theme.snackBarTheme.contentTextStyle ??
-                  TextStyle(color: contentColor),
-            ),
+            child: Text(message, style: theme.snackBarTheme.contentTextStyle ?? TextStyle(color: contentColor)),
           ),
         ],
       ),

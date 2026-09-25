@@ -7,14 +7,7 @@ class CustomAddButton extends StatelessWidget {
   final Color? backgroundColor;
   final Color? foregroundColor;
 
-  const CustomAddButton({
-    super.key,
-    required this.onPressed,
-    required this.label,
-    this.icon = Icons.add,
-    this.backgroundColor,
-    this.foregroundColor,
-  });
+  const CustomAddButton({super.key, required this.onPressed, required this.label, this.icon = Icons.add, this.backgroundColor, this.foregroundColor});
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +18,7 @@ class CustomAddButton extends StatelessWidget {
       backgroundColor: backgroundColor ?? theme.backgroundColor,
       foregroundColor: foregroundColor ?? theme.foregroundColor,
       icon: Icon(icon, color: foregroundColor ?? theme.foregroundColor),
-      label: Text(
-        label,
-        style: TextStyle(color: foregroundColor ?? theme.foregroundColor),
-      ),
+      label: Text(label, style: TextStyle(color: foregroundColor ?? theme.foregroundColor)),
     );
   }
 }

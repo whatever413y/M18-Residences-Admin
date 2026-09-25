@@ -1,12 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:m18_residences_admin/features/room/bloc/room_event.dart';
 import 'package:m18_residences_admin/features/room/bloc/room_state.dart';
-import 'package:m18_residences_admin/services/room_service.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 class RoomBloc extends Bloc<RoomEvent, RoomState> {
-  final RoomService roomService;
+  final RoomApi roomApi;
 
-  RoomBloc(this.roomService) : super(RoomInitial()) {
+  RoomBloc(this.roomApi) : super(RoomInitial()) {
     on<LoadRooms>(_onLoadRooms);
     on<AddRoom>(_onAddRoom);
     on<UpdateRoom>(_onUpdateRoom);
@@ -16,7 +16,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
   Future<void> _onLoadRooms(LoadRooms event, Emitter<RoomState> emit) async {
     emit(RoomLoading());
     try {
-      final rooms = await roomService.fetchRooms();
+      final rooms = await roomApi.list();
       emit(RoomLoaded(rooms));
     } catch (e) {
       emit(RoomError('Failed to load rooms: $e'));
@@ -25,7 +25,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
 
   Future<void> _onAddRoom(AddRoom event, Emitter<RoomState> emit) async {
     try {
-      await roomService.createRoom(event.room.name, event.room.rent);
+      await roomApi.create(event.request);
       add(LoadRooms());
       emit(AddSuccess());
     } catch (e) {
@@ -35,7 +35,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
 
   Future<void> _onUpdateRoom(UpdateRoom event, Emitter<RoomState> emit) async {
     try {
-      await roomService.updateRoom(event.room.id!, event.room.name, event.room.rent);
+      await roomApi.update(event.id, event.request);
       add(LoadRooms());
       emit(UpdateSuccess());
     } catch (e) {
@@ -45,7 +45,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
 
   Future<void> _onDeleteRoom(DeleteRoom event, Emitter<RoomState> emit) async {
     try {
-      await roomService.deleteRoom(event.id);
+      await roomApi.delete(event.id);
       event.onComplete.complete();
       add(LoadRooms());
       emit(DeleteSuccess());

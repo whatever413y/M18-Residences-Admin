@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -7,23 +8,15 @@ import 'package:intl/intl.dart';
 import 'package:m18_residences_admin/features/auth/auth_bloc.dart';
 import 'package:m18_residences_admin/features/auth/auth_event.dart';
 import 'package:m18_residences_admin/features/auth/auth_state.dart';
-import 'package:m18_residences_admin/models/additional_charges.dart';
-import 'package:m18_residences_admin/models/billing.dart';
-import 'package:m18_residences_admin/models/reading.dart';
-import 'package:m18_residences_admin/models/room.dart';
-import 'package:m18_residences_admin/models/tenant.dart';
 import 'package:m18_residences_admin/features/billing/bloc/billing_bloc.dart';
 import 'package:m18_residences_admin/features/billing/bloc/billing_event.dart';
 import 'package:m18_residences_admin/features/billing/bloc/billing_state.dart';
 import 'package:m18_residences_admin/features/billing/widgets/billing_details_dialog.dart';
 import 'package:m18_residences_admin/features/billing/widgets/billing_form_dialog.dart';
-import 'package:m18_residences_admin/services/billing_service.dart';
-import 'package:m18_residences_admin/theme.dart';
 import 'package:m18_residences_admin/utils/confirmation_action.dart';
-import 'package:m18_residences_admin/utils/custom_app_bar.dart';
 import 'package:m18_residences_admin/utils/custom_snackbar.dart';
-import 'package:m18_residences_admin/utils/error_widget.dart';
 import 'package:m18_residences_admin/utils/shared_widgets.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 class BillingsPage extends StatefulWidget {
   @override
@@ -41,8 +34,6 @@ class BillingsPageState extends State<BillingsPage> {
   int? _filterYear;
   int? _filterMonth;
 
-  BillingService get _billingService => context.read<BillingBloc>().billingService;
-
   @override
   void initState() {
     super.initState();
@@ -57,8 +48,8 @@ class BillingsPageState extends State<BillingsPage> {
       final tenant = tenants.firstWhereOrNull((t) => t.id == bill.tenantId);
       final matchRoom = filterRoomId == null || tenant?.roomId == filterRoomId;
       final matchTenant = filterTenantId == null || bill.tenantId == filterTenantId;
-      final matchYear = filterYear == null || bill.createdAt!.year == filterYear;
-      final matchMonth = filterMonth == null || bill.createdAt!.month == filterMonth;
+      final matchYear = filterYear == null || bill.createdAt.year == filterYear;
+      final matchMonth = filterMonth == null || bill.createdAt.month == filterMonth;
       return matchRoom && matchTenant && matchYear && matchMonth;
     }).toList();
   }
@@ -73,45 +64,41 @@ class BillingsPageState extends State<BillingsPage> {
 
     final result = await showDialog<Map<String, dynamic>?>(
       context: context,
-      builder:
-          (context) => BillingFormDialog(
-            showActiveOnly: _showActiveOnly,
-            bill: bill,
-            selectedRoomId: _filterRoomId,
-            selectedTenantId: _filterTenantId,
-            rooms: rooms,
-            tenants: tenants,
-            readings: readings,
-            billingService: _billingService,
-          ),
+      builder: (context) => BillingFormDialog(
+        showActiveOnly: _showActiveOnly,
+        bill: bill,
+        selectedRoomId: _filterRoomId,
+        selectedTenantId: _filterTenantId,
+        rooms: rooms,
+        tenants: tenants,
+        readings: readings,
+      ),
     );
 
     if (!mounted || result == null) return;
 
     CustomSnackbar.show(context, bill != null ? 'Updating...' : 'Creating...', type: SnackBarType.loading);
 
-    final newBill = Bill(
-      id: bill?.id,
+    final request = BillRequest(
       tenantId: result['tenantId'] as int,
       readingId: result['readingId'] as int,
       roomCharges: result['roomCharges'] as int,
       electricCharges: result['electricCharges'] as int,
       additionalCharges:
           (result['additionalCharges'] as List<dynamic>?)?.map((e) => AdditionalCharge.fromJson(e as Map<String, dynamic>)).toList() ?? [],
-      receiptFile: result['receiptFile'] as PlatformFile?,
       receiptUrl: result['receiptUrl'] as String?,
     );
 
     if (bill != null) {
-      billingBloc.add(UpdateBill(newBill));
+      billingBloc.add(UpdateBill(bill.id, request, receiptFile: result['receiptFile'] as PlatformFile?));
       if (!mounted) return;
       CustomSnackbar.show(context, 'Bill updated', type: SnackBarType.success);
     } else {
-      billingBloc.add(AddBill(newBill));
+      billingBloc.add(AddBill(request));
       if (!mounted) return;
       CustomSnackbar.show(
         context,
-        'Bill for tenant "${_findTenantById(tenants, newBill.tenantId)?.name ?? 'Tenant'}" added',
+        'Bill for tenant "${_findTenantById(tenants, request.tenantId)?.name ?? 'Tenant'}" added',
         type: SnackBarType.success,
       );
     }
@@ -128,18 +115,17 @@ class BillingsPageState extends State<BillingsPage> {
     final room = tenant != null ? _findRoomById(rooms, tenant.roomId) : null;
     final consumption = readings.firstWhereOrNull((r) => r.id == bill.readingId)?.consumption ?? 0;
 
-    final date = _dateFormat.format(bill.createdAt!);
+    final date = _dateFormat.format(bill.createdAt);
 
     showDialog(
       context: context,
-      builder:
-          (_) => BillingDetailsDialog(
-            bill: bill,
-            tenantName: tenant?.name ?? 'Unknown Tenant',
-            roomName: room?.name ?? 'Unknown Room',
-            consumption: consumption.toString(),
-            date: date,
-          ),
+      builder: (_) => BillingDetailsDialog(
+        bill: bill,
+        tenantName: tenant?.name ?? 'Unknown Tenant',
+        roomName: room?.name ?? 'Unknown Room',
+        consumption: consumption.toString(),
+        date: date,
+      ),
     );
   }
 
@@ -176,7 +162,7 @@ class BillingsPageState extends State<BillingsPage> {
           buildWhen: (previous, current) => previous.runtimeType != current.runtimeType,
           builder: (context, authState) {
             if (authState is Unauthenticated) {
-              return buildErrorWidget(context: context, message: authState.message);
+              return ErrorView(message: authState.message);
             }
             return BlocListener<BillingBloc, BillingState>(
               listener: (context, state) {
@@ -198,7 +184,7 @@ class BillingsPageState extends State<BillingsPage> {
 
                   if (state is BillingError) {
                     authBloc.add(CheckAuthStatus());
-                    return buildErrorWidget(context: context, message: state.message, onRetry: () => billingBloc.add(LoadBills()));
+                    return ErrorView(message: state.message, onRetry: () => billingBloc.add(LoadBills()));
                   }
 
                   if (state is BillingLoaded) {
@@ -342,17 +328,16 @@ class BillingsPageState extends State<BillingsPage> {
   Widget _buildBillingsTable({required List<Bill> bills, required List<Room> rooms, required List<Tenant> tenants, required List<Reading> readings}) {
     final currencyFormat = NumberFormat.currency(locale: 'en_PH', symbol: '₱', decimalDigits: 0);
 
-    final filteredBills =
-        bills.where((bill) {
-          if (!_showActiveOnly) return true;
+    final filteredBills = bills.where((bill) {
+      if (!_showActiveOnly) return true;
 
-          try {
-            final tenant = tenants.firstWhere((t) => t.id == bill.tenantId);
-            return tenant.isActive;
-          } catch (e) {
-            return false;
-          }
-        }).toList();
+      try {
+        final tenant = tenants.firstWhere((t) => t.id == bill.tenantId);
+        return tenant.isActive;
+      } catch (e) {
+        return false;
+      }
+    }).toList();
 
     if (filteredBills.isEmpty) {
       return const Center(child: Text('No bills found'));
@@ -374,79 +359,77 @@ class BillingsPageState extends State<BillingsPage> {
           DataColumn(label: Text('Total (₱)')),
           DataColumn(label: Text('Date')),
         ],
-        rows:
-            filteredBills.map((bill) {
-              final tenant = _findTenantById(tenants, bill.tenantId);
-              final room = tenant != null ? _findRoomById(rooms, tenant.roomId) : null;
-              final consumption = readings.firstWhereOrNull((r) => r.id == bill.readingId)?.consumption ?? 0;
+        rows: filteredBills.map((bill) {
+          final tenant = _findTenantById(tenants, bill.tenantId);
+          final room = tenant != null ? _findRoomById(rooms, tenant.roomId) : null;
+          final consumption = readings.firstWhereOrNull((r) => r.id == bill.readingId)?.consumption ?? 0;
 
-              return DataRow(
-                onSelectChanged: (_) => _showBillingDetailsDialog(bill, rooms, tenants, readings),
-                cells: [
-                  DataCell(
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _showBillingDialog(bill: bill, rooms: rooms, tenants: tenants, readings: readings),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed:
-                              () => showConfirmationAction(
-                                context: context,
-                                messenger: ScaffoldMessenger.of(context),
-                                confirmTitle: 'Delete Bill',
-                                confirmContent: 'Are you sure you want to delete this bill?',
-                                onConfirmed: () async {
-                                  await _deleteBill(bill.id!);
-                                },
-                              ),
-                        ),
-                      ],
+          return DataRow(
+            onSelectChanged: (_) => _showBillingDetailsDialog(bill, rooms, tenants, readings),
+            cells: [
+              DataCell(
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue),
+                      onPressed: () => _showBillingDialog(bill: bill, rooms: rooms, tenants: tenants, readings: readings),
                     ),
-                  ),
-                  DataCell(Text(room?.name ?? '-')),
-                  DataCell(Text(tenant?.name ?? '-')),
-                  DataCell(Text(consumption.toString())),
-                  DataCell(Text(currencyFormat.format(bill.electricCharges))),
-                  DataCell(Text(currencyFormat.format(bill.roomCharges))),
-                  DataCell(
-                    bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty
-                        ? SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children:
-                                bill.additionalCharges!.map((charge) {
-                                  final amountStr = charge.amount == 0 ? '-' : currencyFormat.format(charge.amount);
-                                  return Text(amountStr, style: TextStyle(color: charge.amount < 0 ? Colors.red : null));
-                                }).toList(),
-                          ),
-                        )
-                        : const Text('-'),
-                  ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => showConfirmationAction(
+                        context: context,
+                        messenger: ScaffoldMessenger.of(context),
+                        confirmTitle: 'Delete Bill',
+                        confirmContent: 'Are you sure you want to delete this bill?',
+                        onConfirmed: () async {
+                          await _deleteBill(bill.id);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              DataCell(Text(room?.name ?? '-')),
+              DataCell(Text(tenant?.name ?? '-')),
+              DataCell(Text(consumption.toString())),
+              DataCell(Text(currencyFormat.format(bill.electricCharges))),
+              DataCell(Text(currencyFormat.format(bill.roomCharges))),
+              DataCell(
+                bill.additionalCharges.isNotEmpty
+                    ? SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: bill.additionalCharges.map((charge) {
+                            final amountStr = charge.amount == 0 ? '-' : currencyFormat.format(charge.amount);
+                            return Text(amountStr, style: TextStyle(color: charge.amount < 0 ? Colors.red : null));
+                          }).toList(),
+                        ),
+                      )
+                    : const Text('-'),
+              ),
 
-                  DataCell(
-                    bill.additionalCharges != null && bill.additionalCharges!.isNotEmpty
-                        ? SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children:
-                                bill.additionalCharges!.map((charge) {
-                                  final desc = charge.description.isNotEmpty ? charge.description : '-';
-                                  return Text(desc);
-                                }).toList(),
-                          ),
-                        )
-                        : const Text('-'),
-                  ),
-                  DataCell(Text(currencyFormat.format(bill.totalAmount))),
-                  DataCell(Text(_dateFormat.format(bill.createdAt!))),
-                ],
-              );
-            }).toList(),
+              DataCell(
+                bill.additionalCharges.isNotEmpty
+                    ? SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: bill.additionalCharges.map((charge) {
+                            final desc = charge.description.isNotEmpty ? charge.description : '-';
+                            return Text(desc);
+                          }).toList(),
+                        ),
+                      )
+                    : const Text('-'),
+              ),
+              DataCell(
+                Semantics(container: true, identifier: 'bill-total-${tenant?.name ?? '-'}', child: Text(currencyFormat.format(bill.totalAmount))),
+              ),
+              DataCell(Text(_dateFormat.format(bill.createdAt))),
+            ],
+          );
+        }).toList(),
       ),
     );
   }

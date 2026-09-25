@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:m18_residences_admin/models/reading.dart';
-import 'package:m18_residences_admin/models/room.dart';
-import 'package:m18_residences_admin/models/tenant.dart';
-import 'package:m18_residences_admin/services/reading_service.dart';
-import 'package:m18_residences_admin/utils/custom_form_field.dart';
 import 'package:m18_residences_admin/utils/shared_widgets.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 class ReadingFormDialog extends StatefulWidget {
   final Reading? reading;
   final List<Room> rooms;
   final List<Tenant> tenants;
   final List<Reading> readings;
-  final ReadingService readingService;
   final int? selectedRoomId;
   final int? selectedTenantId;
   final bool showActiveOnly;
@@ -22,7 +17,6 @@ class ReadingFormDialog extends StatefulWidget {
     required this.rooms,
     required this.tenants,
     required this.readings,
-    required this.readingService,
     required this.selectedRoomId,
     required this.selectedTenantId,
     required this.showActiveOnly,
@@ -64,8 +58,8 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
   }
 
   Reading? _getLatestReading(int roomId, int tenantId) {
-    final filtered =
-        widget.readings.where((r) => r.roomId == roomId && r.tenantId == tenantId).toList()..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+    final filtered = widget.readings.where((r) => r.roomId == roomId && r.tenantId == tenantId).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return filtered.isNotEmpty ? filtered.first : null;
   }
 
@@ -109,13 +103,17 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
   List<Widget> _buildActions(BuildContext context, bool isEditing) {
     return [
       TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-      ElevatedButton(
-        onPressed: _submit,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      Semantics(
+        container: true,
+        identifier: 'reading-save',
+        child: ElevatedButton(
+          onPressed: _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).primaryColor,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          ),
+          child: Text(widget.reading == null ? 'Add' : 'Save'),
         ),
-        child: Text(widget.reading == null ? 'Add' : 'Save'),
       ),
     ];
   }
@@ -123,6 +121,7 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
   Widget _buildRoomDropdown() {
     return buildRoomFilter(
       label: 'Select Room',
+      semanticsId: 'reading-room',
       rooms: widget.rooms,
       tenants: widget.tenants,
       selectedRoomId: _selectedRoomId,
@@ -140,6 +139,7 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
   Widget _buildTenantDropdown() {
     return buildTenantFilter(
       label: 'Select Tenant',
+      semanticsId: 'reading-tenant',
       tenants: widget.tenants,
       readings: widget.readings,
       selectedRoomId: _selectedRoomId,
@@ -159,6 +159,7 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
     return CustomTextFormField(
       controller: prevController,
       labelText: 'Previous Reading (kWh)',
+      semanticsId: 'reading-prev',
       keyboardType: TextInputType.number,
       textInputAction: TextInputAction.next,
       validator: (value) {
@@ -179,6 +180,7 @@ class _ReadingFormDialogState extends State<ReadingFormDialog> {
     return CustomTextFormField(
       controller: currController,
       labelText: 'Current Reading (kWh)',
+      semanticsId: 'reading-curr',
       keyboardType: TextInputType.number,
       textInputAction: TextInputAction.done,
       validator: (value) {

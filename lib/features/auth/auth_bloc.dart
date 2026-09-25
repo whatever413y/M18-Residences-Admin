@@ -1,32 +1,33 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:m18_residences_admin/models/admin.dart';
-import 'package:m18_residences_admin/services/auth_service.dart';
+import 'package:m18_shared/m18_shared.dart';
+
 import 'auth_event.dart';
 import 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final AuthService authService;
+  final AuthApi authApi;
 
   Admin? _cachedAdmin;
 
-  AuthBloc({required this.authService}) : super(AuthInitial()) {
+  AuthBloc({required this.authApi}) : super(AuthInitial()) {
     on<CheckAuthStatus>(_onCheckAuthStatus);
     on<LoginWithAccountId>(_onLoginWithAccountId);
     on<LogoutRequested>(_onLogout);
-    on<FetchReceiptUrl>(_onFetchReceiptUrl);
   }
 
   Future<void> _onCheckAuthStatus(CheckAuthStatus event, Emitter<AuthState> emit) async {
     try {
-      final isAuth = await authService.isAuthenticated();
+      final isAuth = await authApi.validateToken();
       if (!isAuth) {
         return emit(Unauthenticated('Session has expired. Please try again'));
       }
 
-      final token = await authService.getSavedToken();
-      final adminUsername = await authService.getSavedAdminId();
+      final token = await authApi.tokens.token();
+      final adminUsername = await authApi.tokens.subject();
 
       if (token == null || adminUsername == null) {
         return emit(Unauthenticated('Token or user missing'));
@@ -42,14 +43,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onLoginWithAccountId(LoginWithAccountId event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      final token = await authService.adminLogin(event.username, event.password);
-      if (token == null) {
-        emit(AuthError('Invalid credentials'));
-        return;
-      }
-      final admin = authService.cachedAdmin!;
+      final session = await authApi.adminLogin(event.username, event.password);
+      final admin = Admin(username: session.username);
       _cachedAdmin = admin;
-      emit(Authenticated(token: token, admin: admin));
+      emit(Authenticated(token: session.token, admin: admin));
+    } on InvalidCredentialsException {
+      emit(AuthError('Invalid credentials'));
     } on TimeoutException {
       emit(AuthError('Connection timed out. Please try again.'));
     } on SocketException {
@@ -60,20 +59,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onLogout(LogoutRequested event, Emitter<AuthState> emit) async {
-    await authService.logout();
+    await authApi.logout();
     _cachedAdmin = null;
     emit(Unauthenticated('You have been logged out.'));
-  }
-
-  Future<void> _onFetchReceiptUrl(FetchReceiptUrl event, Emitter<AuthState> emit) async {
-    emit(ReceiptUrlLoading());
-    try {
-      final url = await authService.fetchReceiptUrl(event.tenantName, event.filename);
-      if (url == null) throw Exception('URL not found');
-      emit(ReceiptUrlLoaded(url));
-    } catch (e) {
-      emit(ReceiptUrlError(e.toString()));
-    }
   }
 
   Admin? get cachedAdmin => _cachedAdmin;
