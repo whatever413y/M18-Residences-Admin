@@ -4,9 +4,7 @@ import 'package:m18_residences_admin/features/auth/auth_bloc.dart';
 import 'package:m18_residences_admin/features/auth/auth_event.dart';
 import 'package:m18_residences_admin/features/auth/auth_state.dart';
 import 'package:m18_residences_admin/features/home/home_page.dart';
-import 'package:m18_residences_admin/features/login/widgets/loading_overlay.dart';
-import 'package:m18_residences_admin/theme.dart';
-import 'package:m18_residences_admin/utils/custom_form_field.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -124,7 +122,10 @@ class LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Admin Login', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: primaryColor, fontWeight: FontWeight.bold)),
+              Text(
+                'Admin Login',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: primaryColor, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 20),
               _buildUsernameField(primaryColor),
               const SizedBox(height: 15),
@@ -142,6 +143,7 @@ class LoginPageState extends State<LoginPage> {
     return CustomTextFormField(
       controller: _usernameController,
       labelText: 'Username',
+      semanticsId: 'admin-username',
       prefixIcon: Icon(Icons.person, color: primaryColor),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
@@ -156,6 +158,7 @@ class LoginPageState extends State<LoginPage> {
     return CustomTextFormField(
       controller: _passwordController,
       labelText: 'Password',
+      semanticsId: 'admin-password',
       prefixIcon: Icon(Icons.lock, color: primaryColor),
       obscureText: _obscurePassword,
       suffixIcon: IconButton(
@@ -172,15 +175,19 @@ class LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildLoginButton(Color primaryColor) {
-    return ElevatedButton(
-      onPressed: _submitLogin,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Semantics(
+      container: true,
+      identifier: 'admin-login-submit',
+      child: ElevatedButton(
+        onPressed: _submitLogin,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: const Text('Login', style: TextStyle(fontSize: 18)),
       ),
-      child: const Text('Login', style: TextStyle(fontSize: 18)),
     );
   }
 }

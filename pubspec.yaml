@@ -19,7 +19,8 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.7.2
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -31,17 +32,21 @@ dependencies:
   flutter:
     sdk: flutter
   intl: ^0.20.2
-  http: ^1.4.0
   collection: ^1.18.0
   flutter_bloc: ^9.1.1
-  equatable: ^2.0.5
+  equatable: ^3.0.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  shared_preferences: ^2.5.3
-  http_parser: ^4.1.2
-  file_picker: ^10.2.4
+  file_picker: ^13.1.0
+
+  # Shared models, API client and widgets (local checkout via the gitignored pubspec_overrides.yaml).
+  m18_shared:
+    git:
+      url: https://github.com/whatever413y/shared-packages.git
+      path: packages/m18_shared
+      ref: m18_shared-v0.1.0
 
 dev_dependencies:
   flutter_test:
@@ -59,9 +64,6 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-  assets:
-      - assets/
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

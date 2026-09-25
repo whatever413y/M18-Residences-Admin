@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:m18_residences_admin/models/room.dart';
-import 'package:m18_residences_admin/utils/custom_form_field.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 class RoomFormDialog extends StatefulWidget {
   final Room? room;
@@ -25,7 +24,7 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
 
   void _submit() {
     if (_formKey.currentState?.validate() ?? false) {
-      final data = {'name': _nameController.text.trim(), 'rent': double.parse(_rentController.text.trim())};
+      final data = {'name': _nameController.text.trim(), 'rent': int.parse(_rentController.text.trim())};
       Navigator.of(context).pop(data);
     }
   }
@@ -60,6 +59,7 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
     return CustomTextFormField(
       controller: _nameController,
       labelText: 'Room Name',
+      semanticsId: 'room-name',
       textInputAction: TextInputAction.next,
       validator: (val) => (val == null || val.trim().isEmpty) ? 'Enter room name' : null,
       prefixIcon: Icon(Icons.meeting_room, color: Theme.of(context).primaryColor),
@@ -70,10 +70,11 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
     return CustomTextFormField(
       controller: _rentController,
       labelText: 'Rent',
+      semanticsId: 'room-rent',
       keyboardType: TextInputType.number,
       textInputAction: TextInputAction.done,
       validator: (val) {
-        final parsed = double.tryParse(val ?? '');
+        final parsed = int.tryParse(val ?? '');
         if (parsed == null || parsed < 0) {
           return 'Enter a valid rent amount';
         }
@@ -81,7 +82,10 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
       },
       prefixIcon: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Text('₱', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold)),
+        child: Text(
+          '₱',
+          style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 20, fontWeight: FontWeight.bold),
+        ),
       ),
       onFieldSubmitted: (_) => _submit(),
     );
@@ -91,14 +95,21 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
     final isEditing = widget.room != null;
 
     return [
-      TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancel', style: TextStyle(color: Colors.grey))),
-      ElevatedButton(
-        onPressed: _submit,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(null),
+        child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+      ),
+      Semantics(
+        container: true,
+        identifier: 'room-save',
+        child: ElevatedButton(
+          onPressed: _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).primaryColor,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          ),
+          child: Text(isEditing ? 'Save' : 'Add'),
         ),
-        child: Text(isEditing ? 'Save' : 'Add'),
       ),
     ];
   }

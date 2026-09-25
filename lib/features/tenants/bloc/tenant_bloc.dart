@@ -1,14 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:m18_residences_admin/features/tenants/bloc/tenant_event.dart';
 import 'package:m18_residences_admin/features/tenants/bloc/tenant_state.dart';
-import 'package:m18_residences_admin/services/tenant_service.dart';
-import 'package:m18_residences_admin/services/room_service.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 class TenantBloc extends Bloc<TenantEvent, TenantState> {
-  final TenantService tenantService;
-  final RoomService roomService;
+  final TenantApi tenantApi;
+  final RoomApi roomApi;
 
-  TenantBloc({required this.tenantService, required this.roomService}) : super(TenantInitial()) {
+  TenantBloc({required this.tenantApi, required this.roomApi}) : super(TenantInitial()) {
     on<LoadTenants>(_onLoadTenants);
     on<AddTenant>(_onAddTenant);
     on<UpdateTenantEvent>(_onUpdateTenant);
@@ -18,8 +17,8 @@ class TenantBloc extends Bloc<TenantEvent, TenantState> {
   Future<void> _onLoadTenants(LoadTenants event, Emitter<TenantState> emit) async {
     emit(TenantLoading());
     try {
-      final tenants = await tenantService.fetchTenants();
-      final rooms = await roomService.fetchRooms();
+      final tenants = await tenantApi.list();
+      final rooms = await roomApi.list();
       emit(TenantLoaded(tenants, rooms));
     } catch (e) {
       emit(TenantError('Failed to load tenants: $e'));
@@ -28,7 +27,7 @@ class TenantBloc extends Bloc<TenantEvent, TenantState> {
 
   Future<void> _onAddTenant(AddTenant event, Emitter<TenantState> emit) async {
     try {
-      await tenantService.createTenant(event.tenant.name, event.tenant.roomId, event.tenant.joinDate);
+      await tenantApi.create(event.request);
       add(LoadTenants());
       emit(AddSuccess());
     } catch (e) {
@@ -38,7 +37,7 @@ class TenantBloc extends Bloc<TenantEvent, TenantState> {
 
   Future<void> _onUpdateTenant(UpdateTenantEvent event, Emitter<TenantState> emit) async {
     try {
-      await tenantService.updateTenant(event.tenant.id!, event.tenant.name, event.tenant.roomId, event.tenant.joinDate, event.tenant.isActive);
+      await tenantApi.update(event.id, event.request);
       add(LoadTenants());
       emit(UpdateSuccess());
     } catch (e) {
@@ -48,7 +47,7 @@ class TenantBloc extends Bloc<TenantEvent, TenantState> {
 
   Future<void> _onDeleteTenant(DeleteTenant event, Emitter<TenantState> emit) async {
     try {
-      await tenantService.deleteTenant(event.id);
+      await tenantApi.delete(event.id);
       event.onComplete.complete();
       add(LoadTenants());
       emit(DeleteSuccess());

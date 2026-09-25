@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
-import 'package:m18_residences_admin/models/tenant.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 abstract class TenantEvent extends Equatable {
   @override
@@ -11,21 +11,22 @@ abstract class TenantEvent extends Equatable {
 class LoadTenants extends TenantEvent {}
 
 class AddTenant extends TenantEvent {
-  final Tenant tenant;
+  final TenantRequest request;
 
-  AddTenant(this.tenant);
+  AddTenant(this.request);
 
   @override
-  List<Object?> get props => [tenant];
+  List<Object?> get props => [request];
 }
 
 class UpdateTenantEvent extends TenantEvent {
-  final Tenant tenant;
+  final int id;
+  final TenantRequest request;
 
-  UpdateTenantEvent(this.tenant);
+  UpdateTenantEvent(this.id, this.request);
 
   @override
-  List<Object?> get props => [tenant];
+  List<Object?> get props => [id, request];
 }
 
 class DeleteTenant extends TenantEvent {

@@ -1,8 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:m18_residences_admin/models/billing.dart';
-import 'package:m18_residences_admin/models/reading.dart';
-import 'package:m18_residences_admin/models/room.dart';
-import 'package:m18_residences_admin/models/tenant.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 abstract class BillingState extends Equatable {
   @override

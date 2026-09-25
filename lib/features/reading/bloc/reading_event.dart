@@ -1,21 +1,22 @@
 import 'dart:async';
 
-import 'package:m18_residences_admin/models/reading.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 abstract class ReadingEvent {}
 
 class LoadReadings extends ReadingEvent {}
 
 class AddReading extends ReadingEvent {
-  final Reading reading;
+  final ReadingRequest request;
 
-  AddReading(this.reading);
+  AddReading(this.request);
 }
 
 class UpdateReading extends ReadingEvent {
-  final Reading reading;
+  final int id;
+  final ReadingRequest request;
 
-  UpdateReading(this.reading);
+  UpdateReading(this.id, this.request);
 }
 
 class DeleteReading extends ReadingEvent {

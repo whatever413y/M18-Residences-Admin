@@ -32,7 +32,7 @@
   
   # Download and install Flutter
   RUN mkdir -p ${FLUTTER_SDK_ROOT} \
-      && wget -O flutter.tar.xz "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.29.2-stable.tar.xz" \
+      && wget -O flutter.tar.xz "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.47.5-stable.tar.xz" \
       && tar xf flutter.tar.xz -C ${FLUTTER_SDK_ROOT} --strip-components=1 \
       && rm flutter.tar.xz
   

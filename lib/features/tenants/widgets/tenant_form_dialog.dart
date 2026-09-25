@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:m18_residences_admin/models/room.dart';
-import 'package:m18_residences_admin/models/tenant.dart';
-import 'package:m18_residences_admin/utils/custom_dropdown_form.dart';
-import 'package:m18_residences_admin/utils/custom_form_field.dart';
+import 'package:m18_shared/m18_shared.dart';
 
 class TenantFormDialog extends StatefulWidget {
   final Tenant? tenant;
@@ -31,7 +28,8 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
     _isEditing = widget.isEditing ?? false;
     _nameController.text = widget.tenant?.name ?? '';
     _selectedRoomId = widget.tenant?.roomId.toString();
-    _selectedJoinDate = widget.tenant?.joinDate;
+    // New tenants default to joining today; "Pick Date" changes it.
+    _selectedJoinDate = widget.tenant?.joinDate ?? DateUtils.dateOnly(DateTime.now());
     _isActive = widget.tenant?.isActive ?? true;
   }
 
@@ -101,6 +99,7 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
     return CustomTextFormField(
       controller: _nameController,
       labelText: 'Tenant',
+      semanticsId: 'tenant-name',
       textInputAction: TextInputAction.next,
       validator: (value) => (value == null || value.trim().isEmpty) ? 'Enter tenant' : null,
       prefixIcon: Icon(Icons.person, color: Theme.of(context).primaryColor),
@@ -110,6 +109,7 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
   Widget _buildRoomDropdown() {
     return CustomDropdownForm<String>(
       label: 'Room',
+      semanticsId: 'tenant-room',
       value: _selectedRoomId,
       items: widget.rooms.map((room) => DropdownMenuItem(value: room.id.toString(), child: Text(room.name))).toList(),
       onChanged: (value) => setState(() => _selectedRoomId = value),
@@ -127,23 +127,27 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
             Row(
               children: [
                 Expanded(child: Text(_selectedJoinDate == null ? 'Select Join Date' : 'Joined: ${_dateFormat.format(_selectedJoinDate!)}')),
-                TextButton(
-                  onPressed: () async {
-                    final now = DateTime.now();
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: _selectedJoinDate ?? now,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(now.year + 5),
-                    );
-                    if (picked != null) {
-                      setState(() {
-                        _selectedJoinDate = picked;
-                        formFieldState.didChange(picked);
-                      });
-                    }
-                  },
-                  child: const Text('Pick Date'),
+                Semantics(
+                  container: true,
+                  identifier: 'tenant-pick-date',
+                  child: TextButton(
+                    onPressed: () async {
+                      final now = DateTime.now();
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedJoinDate ?? now,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(now.year + 5),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _selectedJoinDate = picked;
+                          formFieldState.didChange(picked);
+                        });
+                      }
+                    },
+                    child: const Text('Pick Date'),
+                  ),
                 ),
               ],
             ),
@@ -161,13 +165,17 @@ class _TenantFormDialogState extends State<TenantFormDialog> {
   List<Widget> _buildActions(BuildContext context, bool isEditing) {
     return [
       TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-      ElevatedButton(
-        onPressed: _submit,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      Semantics(
+        container: true,
+        identifier: 'tenant-save',
+        child: ElevatedButton(
+          onPressed: _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).primaryColor,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          ),
+          child: Text(isEditing ? 'Save' : 'Add'),
         ),
-        child: Text(isEditing ? 'Save' : 'Add'),
       ),
     ];
   }
