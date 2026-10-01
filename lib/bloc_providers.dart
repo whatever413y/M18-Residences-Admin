@@ -9,7 +9,7 @@ import 'package:m18_residences_admin/features/room/bloc/room_bloc.dart';
 import 'package:m18_residences_admin/features/room/bloc/room_event.dart';
 import 'package:m18_residences_admin/features/tenants/bloc/tenant_bloc.dart';
 import 'package:m18_residences_admin/features/tenants/bloc/tenant_event.dart';
-import 'package:m18_shared/m18_shared.dart';
+import 'package:m18_residences_shared/m18_residences_shared.dart';
 
 /// One API client (and session store) shared by every endpoint wrapper.
 final ApiClient _apiClient = ApiClient(tokens: const TokenStore('admin_id'));

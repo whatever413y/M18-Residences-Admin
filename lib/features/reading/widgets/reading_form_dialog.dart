@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:m18_residences_admin/utils/shared_widgets.dart';
-import 'package:m18_shared/m18_shared.dart';
+import 'package:m18_residences_shared/m18_residences_shared.dart';
 
 class ReadingFormDialog extends StatefulWidget {
   final Reading? reading;

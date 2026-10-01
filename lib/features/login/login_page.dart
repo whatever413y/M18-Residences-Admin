@@ -4,7 +4,7 @@ import 'package:m18_residences_admin/features/auth/auth_bloc.dart';
 import 'package:m18_residences_admin/features/auth/auth_event.dart';
 import 'package:m18_residences_admin/features/auth/auth_state.dart';
 import 'package:m18_residences_admin/features/home/home_page.dart';
-import 'package:m18_shared/m18_shared.dart';
+import 'package:m18_residences_shared/m18_residences_shared.dart';
 
 class LoginPage extends StatefulWidget {
   @override

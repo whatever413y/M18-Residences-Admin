@@ -14,7 +14,7 @@ import 'package:m18_residences_admin/utils/confirmation_action.dart';
 import 'package:m18_residences_admin/utils/custom_add_button.dart';
 import 'package:m18_residences_admin/utils/custom_snackbar.dart';
 import 'package:m18_residences_admin/utils/shared_widgets.dart';
-import 'package:m18_shared/m18_shared.dart';
+import 'package:m18_residences_shared/m18_residences_shared.dart';
 
 class TenantsPage extends StatefulWidget {
   const TenantsPage({super.key});

@@ -1,7 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:m18_residences_admin/utils/shared_widgets.dart';
-import 'package:m18_shared/m18_shared.dart';
+import 'package:m18_residences_shared/m18_residences_shared.dart';
 
 class AdditionalChargeInput {
   int amount;

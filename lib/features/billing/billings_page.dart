@@ -16,7 +16,7 @@ import 'package:m18_residences_admin/features/billing/widgets/billing_form_dialo
 import 'package:m18_residences_admin/utils/confirmation_action.dart';
 import 'package:m18_residences_admin/utils/custom_snackbar.dart';
 import 'package:m18_residences_admin/utils/shared_widgets.dart';
-import 'package:m18_shared/m18_shared.dart';
+import 'package:m18_residences_shared/m18_residences_shared.dart';
 
 class BillingsPage extends StatefulWidget {
   @override

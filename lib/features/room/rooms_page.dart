@@ -13,7 +13,7 @@ import 'package:m18_residences_admin/features/room/widgets/room_form_dialog.dart
 import 'package:m18_residences_admin/utils/confirmation_action.dart';
 import 'package:m18_residences_admin/utils/custom_add_button.dart';
 import 'package:m18_residences_admin/utils/custom_snackbar.dart';
-import 'package:m18_shared/m18_shared.dart';
+import 'package:m18_residences_shared/m18_residences_shared.dart';
 
 class RoomsPage extends StatefulWidget {
   const RoomsPage({super.key});

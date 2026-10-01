@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:m18_residences_admin/features/room/bloc/room_event.dart';
 import 'package:m18_residences_admin/features/room/bloc/room_state.dart';
-import 'package:m18_shared/m18_shared.dart';
+import 'package:m18_residences_shared/m18_residences_shared.dart';
 
 class RoomBloc extends Bloc<RoomEvent, RoomState> {
   final RoomApi roomApi;
