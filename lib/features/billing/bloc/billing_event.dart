@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:m18_residences_admin/features/billing/receipt_converter.dart';
 import 'package:m18_residences_shared/m18_residences_shared.dart';
 
 abstract class BillingEvent extends Equatable {
@@ -26,13 +26,13 @@ class UpdateBill extends BillingEvent {
   final int id;
   final BillRequest request;
 
-  /// Receipt image picked in the form; when set, the update is sent together with the file upload.
-  final PlatformFile? receiptFile;
+  /// Receipt picked (and converted) in the form; when set, the update is sent together with the file upload.
+  final PreparedReceipt? receipt;
 
-  const UpdateBill(this.id, this.request, {this.receiptFile});
+  const UpdateBill(this.id, this.request, {this.receipt});
 
   @override
-  List<Object?> get props => [id, request, receiptFile];
+  List<Object?> get props => [id, request, receipt];
 }
 
 class DeleteBill extends BillingEvent {

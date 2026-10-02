@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +10,7 @@ import 'package:m18_residences_admin/features/auth/auth_state.dart';
 import 'package:m18_residences_admin/features/billing/bloc/billing_bloc.dart';
 import 'package:m18_residences_admin/features/billing/bloc/billing_event.dart';
 import 'package:m18_residences_admin/features/billing/bloc/billing_state.dart';
+import 'package:m18_residences_admin/features/billing/receipt_converter.dart';
 import 'package:m18_residences_admin/features/billing/widgets/billing_details_dialog.dart';
 import 'package:m18_residences_admin/features/billing/widgets/billing_form_dialog.dart';
 import 'package:m18_residences_admin/utils/confirmation_action.dart';
@@ -90,7 +90,7 @@ class BillingsPageState extends State<BillingsPage> {
     );
 
     if (bill != null) {
-      billingBloc.add(UpdateBill(bill.id, request, receiptFile: result['receiptFile'] as PlatformFile?));
+      billingBloc.add(UpdateBill(bill.id, request, receipt: result['receipt'] as PreparedReceipt?));
       if (!mounted) return;
       CustomSnackbar.show(context, 'Bill updated', type: SnackBarType.success);
     } else {

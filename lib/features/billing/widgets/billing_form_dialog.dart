@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:m18_residences_admin/features/billing/receipt_converter.dart';
 import 'package:m18_residences_admin/utils/shared_widgets.dart';
 import 'package:m18_residences_shared/m18_residences_shared.dart';
 
@@ -47,7 +48,11 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   int? _selectedRoomId;
   int? _selectedTenantId;
   int? _selectedReadingId;
-  PlatformFile? _receiptFile;
+
+  /// The picked receipt, converted for upload.
+  PreparedReceipt? _receipt;
+  bool _preparingReceipt = false;
+  String? _receiptError;
   String? _receiptUrl;
 
   @override
@@ -103,12 +108,33 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   }
 
   Future<void> _pickReceiptFile() async {
-    // null when the picker is cancelled, which also clears a previously picked file.
-    final file = await FilePicker.pickFile(type: FileType.custom, allowedExtensions: ['png', 'jpg', 'jpeg']);
+    final file = await FilePicker.pickFile(type: FileType.custom, allowedExtensions: receiptExtensions);
+    // A cancelled picker clears a previously picked file.
+    if (file == null) {
+      setState(() {
+        _receipt = null;
+        _receiptError = null;
+      });
+      return;
+    }
 
     setState(() {
-      _receiptFile = file;
+      _preparingReceipt = true;
+      _receiptError = null;
     });
+    try {
+      final prepared = await prepareReceipt(file.name, await file.readAsBytes());
+      if (!mounted) return;
+      setState(() => _receipt = prepared);
+    } on ReceiptException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _receipt = null;
+        _receiptError = e.message;
+      });
+    } finally {
+      if (mounted) setState(() => _preparingReceipt = false);
+    }
   }
 
   Reading? _getLatestReading(int? roomId, int? tenantId) {
@@ -176,6 +202,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
   }
 
   void _submit() async {
+    if (_preparingReceipt) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final additionalCharges = <Map<String, dynamic>>[];
@@ -197,7 +224,7 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       'roomCharges': int.tryParse(_roomChargesController.text) ?? 0,
       'electricCharges': int.tryParse(_electricChargesController.text) ?? 0,
       'additionalCharges': additionalCharges,
-      'receiptFile': _receiptFile,
+      'receipt': _receipt,
       'receiptUrl': _receiptUrl,
     });
   }
@@ -239,6 +266,12 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     );
   }
 
+  static String _size(int bytes) => bytes >= 1024 * 1024 ? '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB' : '${(bytes / 1024).ceil()} KB';
+
+  String _receiptLabel(PreparedReceipt receipt) => receipt.wasConverted
+      ? '${receipt.filename} · ${_size(receipt.bytes.length)} (was ${_size(receipt.originalSize)})'
+      : '${receipt.filename} · ${_size(receipt.bytes.length)}';
+
   Widget _buildUploadButton() {
     final tenantName = _selectedTenantId != null ? widget.tenants.firstWhere((t) => t.id == _selectedTenantId!).name : '';
 
@@ -246,19 +279,31 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ElevatedButton.icon(
-          onPressed: () {
-            Future.microtask(() async {
-              await _pickReceiptFile();
-            });
-          },
+          onPressed: _preparingReceipt
+              ? null
+              : () {
+                  Future.microtask(() async {
+                    await _pickReceiptFile();
+                  });
+                },
           icon: Icon(Icons.attach_file),
-          label: Text((_receiptFile == null && (_receiptUrl == null || _receiptUrl!.isEmpty)) ? 'Attach Receipt' : 'Change Receipt'),
+          label: Text((_receipt == null && (_receiptUrl == null || _receiptUrl!.isEmpty)) ? 'Attach Receipt' : 'Change Receipt'),
         ),
 
-        if (_receiptFile != null)
+        if (_preparingReceipt)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text('Preparing receipt...', style: TextStyle(fontStyle: FontStyle.italic)),
+          )
+        else if (_receiptError != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(_receiptFile!.name, style: const TextStyle(fontStyle: FontStyle.italic)),
+            child: Text(_receiptError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          )
+        else if (_receipt != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(_receiptLabel(_receipt!), style: const TextStyle(fontStyle: FontStyle.italic)),
           )
         else if (_receiptUrl != null && _receiptUrl!.isNotEmpty && _selectedTenantId != null)
           buildReceipt(context, tenantName, _receiptUrl!),

@@ -128,5 +128,5 @@ Widget buildMonthFilter({required List<Reading> readings, required int? selected
 
 /// Link to a bill's receipt image; the signed URL is fetched when it is opened.
 Widget buildReceipt(BuildContext context, String? tenantName, String? receiptUrl) {
-  return ReceiptLink(tenantName: tenantName, receiptUrl: receiptUrl, fetchSignedUrl: context.read<AuthBloc>().authApi.signedReceiptUrl);
+  return ReceiptLink(tenantName: tenantName, receiptUrl: receiptUrl, fetchSignedFile: context.read<AuthBloc>().authApi.signedReceiptUrl);
 }

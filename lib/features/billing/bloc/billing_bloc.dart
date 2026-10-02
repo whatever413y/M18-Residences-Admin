@@ -42,11 +42,11 @@ class BillingBloc extends Bloc<BillingEvent, BillingState> {
 
   Future<void> _onUpdateBill(UpdateBill event, Emitter<BillingState> emit) async {
     try {
-      final receiptFile = event.receiptFile;
-      if (receiptFile == null) {
+      final receipt = event.receipt;
+      if (receipt == null) {
         await billApi.update(event.id, event.request);
       } else {
-        await billApi.uploadReceipt(event.id, event.request, bytes: await receiptFile.readAsBytes(), filename: receiptFile.name);
+        await billApi.uploadReceipt(event.id, event.request, bytes: receipt.bytes, filename: receipt.filename, contentType: receipt.contentType);
       }
       add(LoadBills());
       emit(UpdateSuccess());
