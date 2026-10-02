@@ -370,9 +370,12 @@ class BillingsPageState extends State<BillingsPage> {
               DataCell(
                 Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.blue),
-                      onPressed: () => _showBillingDialog(bill: bill, rooms: rooms, tenants: tenants, readings: readings),
+                    Semantics(
+                      identifier: 'bill-edit-${tenant?.name ?? '-'}',
+                      child: IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.blue),
+                        onPressed: () => _showBillingDialog(bill: bill, rooms: rooms, tenants: tenants, readings: readings),
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),

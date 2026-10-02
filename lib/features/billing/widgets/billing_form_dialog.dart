@@ -278,16 +278,19 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ElevatedButton.icon(
-          onPressed: _preparingReceipt
-              ? null
-              : () {
-                  Future.microtask(() async {
-                    await _pickReceiptFile();
-                  });
-                },
-          icon: Icon(Icons.attach_file),
-          label: Text((_receipt == null && (_receiptUrl == null || _receiptUrl!.isEmpty)) ? 'Attach Receipt' : 'Change Receipt'),
+        Semantics(
+          identifier: 'bill-attach-receipt',
+          child: ElevatedButton.icon(
+            onPressed: _preparingReceipt
+                ? null
+                : () {
+                    Future.microtask(() async {
+                      await _pickReceiptFile();
+                    });
+                  },
+            icon: Icon(Icons.attach_file),
+            label: Text((_receipt == null && (_receiptUrl == null || _receiptUrl!.isEmpty)) ? 'Attach Receipt' : 'Change Receipt'),
+          ),
         ),
 
         if (_preparingReceipt)
@@ -303,7 +306,11 @@ class _BillingFormDialogState extends State<BillingFormDialog> {
         else if (_receipt != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(_receiptLabel(_receipt!), style: const TextStyle(fontStyle: FontStyle.italic)),
+            child: Semantics(
+              container: true,
+              identifier: 'bill-receipt-file',
+              child: Text(_receiptLabel(_receipt!), style: const TextStyle(fontStyle: FontStyle.italic)),
+            ),
           )
         else if (_receiptUrl != null && _receiptUrl!.isNotEmpty && _selectedTenantId != null)
           buildReceipt(context, tenantName, _receiptUrl!),
